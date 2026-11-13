@@ -34,16 +34,20 @@ const Select = forwardRef(
           className={`w-full rounded-xl border transition-all duration-150 text-sm px-3.5 py-2.5 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
             error
               ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-200'
-              : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-100'
+              : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/20'
           } ${className}`}
           {...props}
         >
           {options.length > 0
-            ? options.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))
+            ? options.map((opt, idx) => {
+                const val = typeof opt === 'object' && opt !== null ? opt.value : opt;
+                const lbl = typeof opt === 'object' && opt !== null ? (opt.label ?? opt.value) : opt;
+                return (
+                  <option key={val !== undefined ? val : idx} value={val}>
+                    {lbl}
+                  </option>
+                );
+              })
             : children}
         </select>
         {error ? (

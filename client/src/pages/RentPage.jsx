@@ -535,7 +535,7 @@ const RentPage = () => {
           {!selectedInvoice && (
             <div className="space-y-3">
               <Select
-                label="Select Tenant *"
+                label="Select Tenant"
                 required
                 value={selectedTenantId}
                 onChange={(e) => handleTenantSelect(e.target.value)}
@@ -549,7 +549,7 @@ const RentPage = () => {
               />
 
               <Input
-                label="For Billing Month *"
+                label="For Billing Month"
                 type="month"
                 required
                 value={paymentBillingMonth}
@@ -594,7 +594,7 @@ const RentPage = () => {
           ) : null}
 
           <Input
-            label="Amount Paid Now (₹) *"
+            label="Amount Paid Now (₹)"
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
@@ -611,14 +611,15 @@ const RentPage = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
-              label="Payment Date *"
+              label="Payment Date"
               type="date"
               required
               value={paymentForm.paymentDate}
               onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
             />
             <Select
-              label="Payment Method *"
+              label="Payment Method"
+              required
               value={paymentForm.paymentMethod}
               onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
               options={PAYMENT_METHODS}
