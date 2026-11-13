@@ -1,5 +1,5 @@
-export const APP_NAME = 'RoomRent Manager';
-export const OWNER_SUBTITLE = 'Owner-Only Room Rental System';
+export const APP_NAME = 'KirayaKhata';
+export const OWNER_SUBTITLE = 'Owner-Only Room Rental Management System';
 
 export const DOCUMENT_TYPE_LABELS = {
   aadhaar: 'Aadhaar Card',

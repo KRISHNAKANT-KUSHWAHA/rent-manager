@@ -71,13 +71,13 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <Building2 className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-sm font-bold text-white tracking-tight truncate max-w-[130px]">
-                  {user?.houseName || 'Rental Property'}
+                <h1 className="text-sm font-black text-white tracking-tight truncate max-w-[130px]">
+                  KirayaKhata
                 </h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Owner Portal
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[120px]">
+                    {user?.houseName || 'Owner Portal'}
                   </span>
                 </div>
               </div>

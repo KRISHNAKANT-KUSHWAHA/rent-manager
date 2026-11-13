@@ -1,4 +1,4 @@
-# RoomRent Manager — Owner-Only Room Rental Management System
+# KirayaKhata — Owner-Only Room Rental Management System
 
 [![Node.js](https://img.shields.io/badge/Node.js-v22.19-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-v18.3-61DAFB?logo=react&logoColor=black)](https://react.dev/)

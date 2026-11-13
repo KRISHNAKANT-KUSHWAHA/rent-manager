@@ -36,7 +36,15 @@ const tenantDocumentSchema = new mongoose.Schema(
     },
     filePath: {
       type: String,
-      required: true,
+      default: '',
+    },
+    fileUrl: {
+      type: String,
+      default: '',
+    },
+    fileId: {
+      type: String,
+      default: '',
     },
     fileSize: {
       type: Number,

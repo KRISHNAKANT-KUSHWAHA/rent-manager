@@ -16,7 +16,15 @@ const Navbar = ({ onToggleSidebar }) => {
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2 text-xs text-slate-600 font-medium truncate">
+        {/* Mobile Brand Name */}
+        <div className="lg:hidden flex items-center gap-1.5 font-black text-slate-900 text-sm">
+          <span className="w-7 h-7 rounded-lg bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex items-center justify-center text-xs font-black shadow-xs">
+            K
+          </span>
+          <span>KirayaKhata</span>
+        </div>
+
+        <div className="hidden sm:flex items-center gap-2 text-xs text-slate-600 font-medium truncate">
           <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
           <span className="truncate max-w-[220px] sm:max-w-md font-semibold text-slate-700">
             {user?.houseAddress || 'Residential Property'}

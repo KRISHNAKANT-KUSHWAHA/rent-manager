@@ -1,7 +1,7 @@
 {
-  "name": "rent-manager-server",
+  "name": "kirayakhata-server",
   "version": "1.0.0",
-  "description": "Owner-Only Room Rental Management System Backend",
+  "description": "KirayaKhata - Owner-Only Room Rental Management System Backend",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

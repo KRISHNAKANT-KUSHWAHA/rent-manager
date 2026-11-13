@@ -153,7 +153,7 @@ const LoginPage = () => {
             <Building2 className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
-            RoomRent Manager
+            KirayaKhata
           </h1>
           <p className="text-sm text-slate-300 mt-1 font-medium">
             Owner-Only Room Rental Management System

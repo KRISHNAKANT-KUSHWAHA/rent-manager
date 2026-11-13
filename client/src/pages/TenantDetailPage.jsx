@@ -15,6 +15,7 @@ import Skeleton from '../components/common/Skeleton';
 import EmptyState from '../components/common/EmptyState';
 import {
   User,
+  Users,
   Phone,
   Mail,
   MapPin,
@@ -339,63 +340,77 @@ const TenantDetailPage = () => {
             </div>
           </div>
 
-          {/* Emergency Contact & Identity Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Emergency Contact Card */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Phone className="w-4 h-4 text-amber-500" />
-                Emergency Contact
-              </h4>
-              <div className="space-y-2 text-xs">
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Contact Person</span>
-                  <span className="font-bold text-slate-800 text-sm">
-                    {tenant?.emergencyContactName || 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Emergency Phone</span>
-                  <span className="font-bold text-indigo-700 text-sm">
-                    {tenant?.emergencyContactNumber || 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Relationship</span>
-                  <span className="font-medium text-slate-700">
-                    {tenant?.emergencyContactRelation || 'Parent'}
-                  </span>
-                </div>
+          {/* Identity Information (Protected) */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-orange-600" />
+              Identity Information (Protected)
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <span className="text-slate-400 block text-[10px]">Masked Aadhaar</span>
+                <span className="font-mono font-bold text-slate-800 text-sm">
+                  {tenant?.maskedAadhaar || maskAadhaar(tenant?.aadhaarNumber) || 'Not provided'}
+                </span>
               </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Voter ID Number</span>
+                <span className="font-mono font-semibold text-slate-800">
+                  {tenant?.voterId || 'Not provided'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">PAN Card</span>
+                <span className="font-mono font-semibold text-slate-800">
+                  {tenant?.panNumber || 'Not provided'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Room Co-Occupants / Family Members Living Here */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div>
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-orange-600" />
+                  Members / Co-Occupants Living In This Room ({tenant?.familyMembers?.length || 0})
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  All registered family members and roommates sharing this room.
+                </p>
+              </div>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 self-start sm:self-auto">
+                Total Headcount: {(tenant?.familyMembers?.length || 0) + 1} Persons
+              </span>
             </div>
 
-            {/* Identity Numbers Card */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-orange-600" />
-                Identity Information (Protected)
-              </h4>
-              <div className="space-y-2 text-xs">
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Masked Aadhaar</span>
-                  <span className="font-mono font-bold text-slate-800 text-sm">
-                    {tenant?.maskedAadhaar || maskAadhaar(tenant?.aadhaarNumber)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Voter ID Number</span>
-                  <span className="font-mono font-semibold text-slate-800">
-                    {tenant?.voterId || 'Not provided'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">PAN Card</span>
-                  <span className="font-mono font-semibold text-slate-800">
-                    {tenant?.panNumber || 'Not provided'}
-                  </span>
-                </div>
+            {tenant?.familyMembers && tenant.familyMembers.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {tenant.familyMembers.map((m, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">{m.name}</span>
+                      <span className="text-[10px] font-bold bg-orange-100 text-orange-800 px-2 py-0.5 rounded-md">
+                        {m.relationship}
+                      </span>
+                    </div>
+                    {m.age && <p className="text-[11px] text-slate-500">Age: {m.age} yrs</p>}
+                    {m.phone && (
+                      <p className="text-[11px] text-slate-600 font-medium">📞 {m.phone}</p>
+                    )}
+                    {m.occupation && <p className="text-[11px] text-slate-500">{m.occupation}</p>}
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className="p-4 rounded-2xl border border-dashed border-slate-200 text-xs text-slate-400 text-center">
+                Only the primary tenant ({tenant?.fullName}) is registered in this room.
+              </div>
+            )}
           </div>
 
           {/* Uploaded Documents List */}

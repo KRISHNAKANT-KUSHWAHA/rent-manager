@@ -1,5 +1,7 @@
+const fs = require('fs');
 const Expense = require('../models/Expense');
 const { logAudit } = require('../services/auditService');
+const { uploadToImageKit } = require('../services/imagekitService');
 
 /**
  * @desc    Get all property expenses
@@ -65,6 +67,17 @@ const createExpense = async (req, res) => {
     let receiptUrl = '';
     if (req.file) {
       receiptUrl = `/api/documents/receipts/${req.file.filename}`;
+      try {
+        if (fs.existsSync(req.file.path)) {
+          const fileBuffer = fs.readFileSync(req.file.path);
+          const cloud = await uploadToImageKit(fileBuffer, req.file.originalname, '/receipts');
+          if (cloud && cloud.url) {
+            receiptUrl = cloud.url;
+          }
+        }
+      } catch (cloudErr) {
+        console.warn('[ImageKit Receipt Warning]', cloudErr.message);
+      }
     }
 
     const expense = await Expense.create({
@@ -122,6 +135,17 @@ const updateExpense = async (req, res) => {
 
     if (req.file) {
       expense.receiptUrl = `/api/documents/receipts/${req.file.filename}`;
+      try {
+        if (fs.existsSync(req.file.path)) {
+          const fileBuffer = fs.readFileSync(req.file.path);
+          const cloud = await uploadToImageKit(fileBuffer, req.file.originalname, '/receipts');
+          if (cloud && cloud.url) {
+            expense.receiptUrl = cloud.url;
+          }
+        }
+      } catch (cloudErr) {
+        console.warn('[ImageKit Receipt Update Warning]', cloudErr.message);
+      }
     }
 
     await expense.save();

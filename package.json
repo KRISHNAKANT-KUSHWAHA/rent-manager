@@ -1,8 +1,10 @@
 {
-  "name": "room-rental-management-system",
+  "name": "kirayakhata",
   "version": "1.0.0",
-  "description": "Owner-Only Room Rental Management System for a Single Residential House",
+  "description": "KirayaKhata - Owner-Only Room Rental Management System for a Single Residential House",
   "scripts": {
+    "start": "node server/server.js",
+    "build": "npm --prefix client install && npm --prefix client run build && npm --prefix server install",
     "server": "npm --prefix server start",
     "client": "npm --prefix client dev",
     "seed": "npm --prefix server run seed",

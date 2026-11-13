@@ -81,18 +81,18 @@ const tenantSchema = new mongoose.Schema(
     familyMembers: [familyMemberSchema],
     emergencyContactName: {
       type: String,
-      required: [true, 'Emergency contact name is required'],
       trim: true,
+      default: '',
     },
     emergencyContactNumber: {
       type: String,
-      required: [true, 'Emergency contact number is required'],
       trim: true,
+      default: '',
     },
     emergencyContactRelation: {
       type: String,
       trim: true,
-      default: 'Parent/Relative',
+      default: '',
     },
 
     // Identity Details (Masked & Protected)

@@ -1,3 +1,4 @@
+const fs = require('fs');
 const Tenant = require('../models/Tenant');
 const Room = require('../models/Room');
 const RentalAgreement = require('../models/RentalAgreement');
@@ -5,6 +6,7 @@ const RentInvoice = require('../models/RentInvoice');
 const RentPayment = require('../models/RentPayment');
 const TenantDocument = require('../models/TenantDocument');
 const { logAudit } = require('../services/auditService');
+const { uploadToImageKit } = require('../services/imagekitService');
 
 /**
  * @desc    Get all tenants with search & filter
@@ -147,13 +149,6 @@ const createTenant = async (req, res) => {
       });
     }
 
-    if (!emergencyContactName || !emergencyContactNumber) {
-      return res.status(400).json({
-        success: false,
-        message: 'Emergency contact name and phone number are required',
-      });
-    }
-
     let room = null;
     if (assignedRoomId) {
       room = await Room.findById(assignedRoomId);
@@ -182,9 +177,9 @@ const createTenant = async (req, res) => {
       alternateMobile: alternateMobile || '',
       email: email || '',
       familyMembers: Array.isArray(familyMembers) ? familyMembers : [],
-      emergencyContactName,
-      emergencyContactNumber,
-      emergencyContactRelation: emergencyContactRelation || 'Relative',
+      emergencyContactName: emergencyContactName || '',
+      emergencyContactNumber: emergencyContactNumber || '',
+      emergencyContactRelation: emergencyContactRelation || '',
       aadhaarNumber: aadhaarNumber || '',
       voterId: voterId || '',
       panNumber: panNumber || '',
@@ -353,7 +348,21 @@ const uploadTenantPhoto = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Tenant not found' });
     }
 
-    const photoUrl = `/api/documents/photos/${req.file.filename}`;
+    let photoUrl = `/api/documents/photos/${req.file.filename}`;
+
+    // Upload to ImageKit if configured
+    try {
+      if (fs.existsSync(req.file.path)) {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const cloud = await uploadToImageKit(fileBuffer, req.file.originalname, '/photos');
+        if (cloud && cloud.url) {
+          photoUrl = cloud.url;
+        }
+      }
+    } catch (cloudErr) {
+      console.warn('[ImageKit Photo Upload - Using local storage]', cloudErr.message);
+    }
+
     tenant.photoUrl = photoUrl;
     await tenant.save();
 

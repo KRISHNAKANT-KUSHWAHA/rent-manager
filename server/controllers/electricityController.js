@@ -1,3 +1,4 @@
+const fs = require('fs');
 const ElectricityMeter = require('../models/ElectricityMeter');
 const ElectricityReading = require('../models/ElectricityReading');
 const ElectricityBill = require('../models/ElectricityBill');
@@ -7,6 +8,7 @@ const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const { generateElectricityReceiptPDF } = require('../services/pdfService');
 const { logAudit } = require('../services/auditService');
+const { uploadToImageKit } = require('../services/imagekitService');
 
 /**
  * @desc    Get all electricity meters
@@ -106,6 +108,17 @@ const recordReading = async (req, res) => {
     let photoUrl = '';
     if (req.file) {
       photoUrl = `/api/documents/meters/${req.file.filename}`;
+      try {
+        if (fs.existsSync(req.file.path)) {
+          const fileBuffer = fs.readFileSync(req.file.path);
+          const cloud = await uploadToImageKit(fileBuffer, req.file.originalname, '/meters');
+          if (cloud && cloud.url) {
+            photoUrl = cloud.url;
+          }
+        }
+      } catch (cloudErr) {
+        console.warn('[ImageKit Meter Photo Warning]', cloudErr.message);
+      }
     }
 
     const reading = await ElectricityReading.create({

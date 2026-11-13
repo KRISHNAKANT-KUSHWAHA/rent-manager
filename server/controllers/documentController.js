@@ -3,6 +3,7 @@ const fs = require('fs');
 const TenantDocument = require('../models/TenantDocument');
 const Tenant = require('../models/Tenant');
 const { logAudit } = require('../services/auditService');
+const { uploadToImageKit, deleteFromImageKit } = require('../services/imagekitService');
 
 /**
  * @desc    Upload document for a tenant
@@ -32,6 +33,21 @@ const uploadDocument = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Tenant not found' });
     }
 
+    // Attempt ImageKit cloud upload if configured
+    let cloudResult = null;
+    try {
+      if (fs.existsSync(req.file.path)) {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        cloudResult = await uploadToImageKit(
+          fileBuffer,
+          req.file.originalname,
+          documentType === 'aadhaar' ? '/aadhaar' : '/documents'
+        );
+      }
+    } catch (cloudErr) {
+      console.warn('[ImageKit Upload - Using local storage]', cloudErr.message);
+    }
+
     const doc = await TenantDocument.create({
       tenant: tenantId,
       documentType,
@@ -39,6 +55,8 @@ const uploadDocument = async (req, res) => {
       originalName: req.file.originalname,
       fileName: req.file.filename,
       filePath: req.file.path,
+      fileUrl: cloudResult?.url || '',
+      fileId: cloudResult?.fileId || '',
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
       documentNumber: documentNumber ? documentNumber.trim() : '',
@@ -115,6 +133,11 @@ const viewDocument = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Document not found' });
     }
 
+    // If stored on ImageKit cloud, redirect directly to secure CDN
+    if (doc.fileUrl) {
+      return res.redirect(doc.fileUrl);
+    }
+
     const filePath = path.resolve(doc.filePath);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ success: false, message: 'File not found on disk' });
@@ -141,6 +164,11 @@ const downloadDocument = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Document not found' });
     }
 
+    // If stored on ImageKit cloud, redirect directly
+    if (doc.fileUrl) {
+      return res.redirect(doc.fileUrl);
+    }
+
     const filePath = path.resolve(doc.filePath);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ success: false, message: 'File not found on disk' });
@@ -162,6 +190,11 @@ const deleteDocument = async (req, res) => {
     const doc = await TenantDocument.findById(req.params.id);
     if (!doc) {
       return res.status(404).json({ success: false, message: 'Document not found' });
+    }
+
+    // Delete from ImageKit if stored in cloud
+    if (doc.fileId) {
+      await deleteFromImageKit(doc.fileId);
     }
 
     const filePath = path.resolve(doc.filePath);

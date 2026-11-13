@@ -48,7 +48,6 @@ const TenantsPage = () => {
   const initialFormState = {
     fullName: '',
     fatherName: '',
-    husbandName: '',
     gender: 'Male',
     occupation: '',
     employerOrCollege: '',
@@ -57,9 +56,7 @@ const TenantsPage = () => {
     primaryMobile: '',
     alternateMobile: '',
     email: '',
-    emergencyContactName: '',
-    emergencyContactNumber: '',
-    emergencyContactRelation: 'Parent',
+    familyMembers: [],
     aadhaarNumber: '',
     voterId: '',
     panNumber: '',
@@ -71,6 +68,31 @@ const TenantsPage = () => {
   };
   const [formData, setFormData] = useState(initialFormState);
   const [formTab, setFormTab] = useState('personal'); // 'personal' | 'family' | 'identity' | 'room'
+  const [newMember, setNewMember] = useState({
+    name: '',
+    relationship: 'Family Member',
+    age: '',
+    phone: '',
+  });
+
+  const handleAddMember = () => {
+    if (!newMember.name.trim()) {
+      toast.error('Please enter family member or co-occupant name');
+      return;
+    }
+    setFormData({
+      ...formData,
+      familyMembers: [...(formData.familyMembers || []), { ...newMember }],
+    });
+    setNewMember({ name: '', relationship: 'Family Member', age: '', phone: '' });
+  };
+
+  const handleRemoveMember = (idxToRemove) => {
+    setFormData({
+      ...formData,
+      familyMembers: formData.familyMembers.filter((_, idx) => idx !== idxToRemove),
+    });
+  };
 
   // Vacate Form state
   const [vacateData, setVacateData] = useState({
@@ -261,9 +283,14 @@ const TenantsPage = () => {
 
             <td className="py-4 px-4 sm:px-5">
               {tenant.currentRoom ? (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200/80 text-slate-800 font-bold text-xs">
-                  <Home className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{tenant.currentRoom.roomNumber}</span>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200/80 text-slate-800 font-bold text-xs">
+                    <Home className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{tenant.currentRoom.roomNumber}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-medium mt-1">
+                    👥 {tenant.familyMembers?.length ? tenant.familyMembers.length + 1 : 1} {tenant.familyMembers?.length ? 'occupants' : 'occupant'}
+                  </div>
                 </div>
               ) : (
                 <span className="text-slate-400 font-medium text-xs">None (Vacated)</span>
@@ -334,7 +361,7 @@ const TenantsPage = () => {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         title="Register New Tenant"
-        subtitle="Complete tenant personal details, emergency contact, identity proof, and room tenancy."
+        subtitle="Complete tenant details, optional room members, identity proof, and room tenancy."
         maxWidth="max-w-2xl"
       >
         {/* Navigation Tabs */}
@@ -359,7 +386,7 @@ const TenantsPage = () => {
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            2. Family & Emergency
+            2. Room Members (Optional)
           </button>
           <button
             type="button"
@@ -467,52 +494,130 @@ const TenantsPage = () => {
             </div>
           )}
 
-          {/* Tab 2: Family & Emergency */}
+          {/* Tab 2: Room Members / Co-Occupants (Optional) */}
           {formTab === 'family' && (
             <div className="space-y-4 animate-in fade-in">
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-900 leading-relaxed">
-                Emergency contact details are critical for house safety and urgent notifications.
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 leading-relaxed">
+                Optional: Record other family members or roommates living in this room alongside the primary tenant.
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <Input
-                  label="Emergency Contact Name"
-                  required
-                  placeholder="Parent or Guardian Name"
-                  value={formData.emergencyContactName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, emergencyContactName: e.target.value })
-                  }
-                />
-                <Input
-                  label="Emergency Contact Phone"
-                  required
-                  type="tel"
-                  placeholder="9829011223"
-                  value={formData.emergencyContactNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, emergencyContactNumber: e.target.value })
-                  }
-                />
-              </div>
+              {/* Co-Occupants / Family living in room */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-orange-600" />
+                      Members Living In This Room
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Add spouses, children, parents, or co-tenants residing in the same room.
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-100 text-orange-800 border border-orange-200 self-start sm:self-auto">
+                    Total: {(formData.familyMembers?.length || 0) + 1} Persons
+                  </span>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <Input
-                  label="Relationship to Tenant"
-                  placeholder="Father / Mother / Brother"
-                  value={formData.emergencyContactRelation}
-                  onChange={(e) =>
-                    setFormData({ ...formData, emergencyContactRelation: e.target.value })
-                  }
-                />
-                <Input
-                  label="Husband's Name (if applicable)"
-                  placeholder="Optional"
-                  value={formData.husbandName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, husbandName: e.target.value })
-                  }
-                />
+                {/* List of added members */}
+                {formData.familyMembers && formData.familyMembers.length > 0 ? (
+                  <div className="space-y-2">
+                    {formData.familyMembers.map((m, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs shadow-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <span className="font-bold text-slate-800">{m.name}</span>
+                            <span className="ml-2 text-[11px] text-orange-700 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 font-medium">
+                              {m.relationship}
+                            </span>
+                            {m.age && <span className="ml-2 text-slate-400">({m.age} yrs)</span>}
+                            {m.phone && <span className="ml-2 text-slate-500">📞 {m.phone}</span>}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMember(idx)}
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                          title="Remove member"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic">
+                    Currently 1 person (primary tenant). If they live alone, you can skip to next step.
+                  </p>
+                )}
+
+                {/* Add member inputs */}
+                <div className="pt-2 border-t border-slate-200/60">
+                  <span className="text-[11px] font-bold text-slate-700 block mb-2">
+                    + Add Co-Occupant / Family Member:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-end">
+                    <Input
+                      label="Member Name"
+                      placeholder="e.g. Sunita Devi"
+                      value={newMember.name}
+                      onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                    />
+                    <Select
+                      label="Relationship"
+                      value={newMember.relationship}
+                      onChange={(e) => setNewMember({ ...newMember, relationship: e.target.value })}
+                      options={[
+                        { value: 'Wife', label: 'Wife' },
+                        { value: 'Husband', label: 'Husband' },
+                        { value: 'Son', label: 'Son' },
+                        { value: 'Daughter', label: 'Daughter' },
+                        { value: 'Father', label: 'Father' },
+                        { value: 'Mother', label: 'Mother' },
+                        { value: 'Brother', label: 'Brother' },
+                        { value: 'Sister', label: 'Sister' },
+                        { value: 'Roommate/Friend', label: 'Roommate / Friend' },
+                        { value: 'Other Relative', label: 'Other Relative' },
+                      ]}
+                    />
+                    <Input
+                      label="Age"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="Optional"
+                      value={newMember.age}
+                      onChange={(e) =>
+                        setNewMember({
+                          ...newMember,
+                          age: e.target.value.replace(/[^0-9]/g, ''),
+                        })
+                      }
+                    />
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Input
+                          label="Mobile"
+                          type="tel"
+                          placeholder="Optional"
+                          value={newMember.phone}
+                          onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddMember}
+                        className="h-10 px-3.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl transition shrink-0 self-end mb-0.5 shadow-sm"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
