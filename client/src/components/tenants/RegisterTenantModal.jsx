@@ -71,7 +71,25 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    if (formTab !== 'room') return;
+
+    if (!formData.fullName.trim() || !formData.fatherName.trim() || !formData.primaryMobile.trim() || !formData.permanentAddress.trim()) {
+      toast.error('Please enter Full Name, Father Name, Mobile No. and Permanent Address');
+      setFormTab('personal');
+      return;
+    }
+
+    if (!formData.assignedRoomId) {
+      toast.error('Please select an available room from the list');
+      return;
+    }
+
+    if (!formData.monthlyRent || Number(formData.monthlyRent) <= 0) {
+      toast.error('Please enter the agreed monthly rent');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -128,7 +146,13 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+        }}
+        className="space-y-4"
+      >
         {/* Tab 1: Personal Details */}
         {formTab === 'personal' && (
           <div className="space-y-4 animate-in fade-in duration-100">
@@ -444,29 +468,64 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
 
         {/* Footer Controls */}
         <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            {formTab !== 'personal' && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  if (formTab === 'room') setFormTab('identity');
+                  else if (formTab === 'identity') setFormTab('family');
+                  else if (formTab === 'family') setFormTab('personal');
+                }}
+              >
+                ← Back
+              </Button>
+            )}
+          </div>
 
           <div className="flex items-center gap-2">
             {formTab !== 'room' ? (
               <Button
+                key="btn-next"
                 type="button"
                 variant="dark"
                 onClick={() => {
-                  if (formTab === 'personal') setFormTab('family');
-                  else if (formTab === 'family') setFormTab('identity');
-                  else if (formTab === 'identity') setFormTab('room');
+                  if (formTab === 'personal') {
+                    if (
+                      !formData.fullName.trim() ||
+                      !formData.fatherName.trim() ||
+                      !formData.primaryMobile.trim() ||
+                      !formData.permanentAddress.trim()
+                    ) {
+                      toast.error('Please enter Full Name, Father Name, Mobile No. and Permanent Address');
+                      return;
+                    }
+                    setFormTab('family');
+                  } else if (formTab === 'family') {
+                    setFormTab('identity');
+                  } else if (formTab === 'identity') {
+                    setFormTab('room');
+                  }
                 }}
               >
-                Next Step
+                Next Step →
               </Button>
             ) : (
-              <Button type="submit" variant="brand" loading={submitting}>
+              <Button
+                key="btn-submit"
+                type="button"
+                variant="brand"
+                loading={submitting}
+                onClick={handleSubmit}
+              >
                 Complete Registration
               </Button>
             )}

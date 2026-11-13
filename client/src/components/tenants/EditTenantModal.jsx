@@ -103,8 +103,9 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!tenant) return;
+    if (editTab !== 'rent') return;
     setSubmitting(true);
 
     try {
@@ -174,7 +175,13 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+        }}
+        className="space-y-4"
+      >
         {/* Tab 1: Personal */}
         {editTab === 'personal' && (
           <div className="space-y-4 animate-in fade-in duration-100">
@@ -387,12 +394,29 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
 
         {/* Footer */}
         <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            {editTab !== 'personal' && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  if (editTab === 'rent') setEditTab('identity');
+                  else if (editTab === 'identity') setEditTab('family');
+                  else if (editTab === 'family') setEditTab('personal');
+                }}
+              >
+                ← Back
+              </Button>
+            )}
+          </div>
+
           <div className="flex items-center gap-2">
             {editTab !== 'rent' ? (
               <Button
+                key="edit-btn-next"
                 type="button"
                 variant="dark"
                 onClick={() => {
@@ -401,10 +425,16 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
                   else if (editTab === 'identity') setEditTab('rent');
                 }}
               >
-                Next
+                Next Step →
               </Button>
             ) : (
-              <Button type="submit" variant="brand" loading={submitting}>
+              <Button
+                key="edit-btn-submit"
+                type="button"
+                variant="brand"
+                loading={submitting}
+                onClick={handleSubmit}
+              >
                 Save Changes
               </Button>
             )}
