@@ -204,7 +204,7 @@ const createTenant = async (req, res) => {
         : new Date(new Date(start).setFullYear(start.getFullYear() + 1));
 
       const agreedRent = Number(monthlyRent) || room.monthlyRent;
-      const agreedDeposit = Number(securityDeposit) || room.securityDeposit;
+      const agreedDeposit = securityDeposit !== undefined && securityDeposit !== '' ? Number(securityDeposit) : (room.securityDeposit || 0);
       const agrNum = `AGR-${room.roomNumber}-${Date.now().toString().slice(-4)}`;
 
       const agreement = await RentalAgreement.create({

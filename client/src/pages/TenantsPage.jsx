@@ -68,7 +68,7 @@ const TenantsPage = () => {
     panNumber: '',
     assignedRoomId: '',
     monthlyRent: '',
-    securityDeposit: '',
+    securityDeposit: 0,
     rentDueDay: 5,
     moveInDate: new Date().toISOString().slice(0, 10),
   };
@@ -130,7 +130,7 @@ const TenantsPage = () => {
         ...prev,
         assignedRoomId: roomId,
         monthlyRent: selected ? selected.monthlyRent : prev.monthlyRent,
-        securityDeposit: selected ? selected.securityDeposit : prev.securityDeposit,
+        securityDeposit: selected ? (selected.securityDeposit ?? 0) : 0,
       };
     });
   };
@@ -577,7 +577,7 @@ const TenantsPage = () => {
                 <Input
                   label="Security Deposit (INR)"
                   type="number"
-                  placeholder="17000"
+                  placeholder="0 (Default: 0)"
                   value={formData.securityDeposit}
                   onChange={(e) =>
                     setFormData({ ...formData, securityDeposit: e.target.value })

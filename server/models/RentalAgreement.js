@@ -33,7 +33,7 @@ const rentalAgreementSchema = new mongoose.Schema(
     },
     securityDeposit: {
       type: Number,
-      required: [true, 'Security deposit is required'],
+      default: 0,
       min: 0,
     },
     rentDueDay: {

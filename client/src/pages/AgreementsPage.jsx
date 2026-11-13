@@ -48,7 +48,7 @@ const AgreementsPage = () => {
       .toISOString()
       .slice(0, 10),
     monthlyRent: '',
-    securityDeposit: '',
+    securityDeposit: 0,
     rentDueDay: 5,
     notes: '',
   });
@@ -169,7 +169,7 @@ const AgreementsPage = () => {
                 .toISOString()
                 .slice(0, 10),
               monthlyRent: '',
-              securityDeposit: '',
+              securityDeposit: 0,
               rentDueDay: 5,
               notes: '',
             });
@@ -390,7 +390,7 @@ const AgreementsPage = () => {
                   ...formData,
                   roomId: e.target.value,
                   monthlyRent: room ? room.monthlyRent : formData.monthlyRent,
-                  securityDeposit: room ? room.securityDeposit : formData.securityDeposit,
+                  securityDeposit: room ? (room.securityDeposit ?? 0) : 0,
                 });
               }}
             >
@@ -445,7 +445,7 @@ const AgreementsPage = () => {
             <Input
               label="Security Deposit (INR)"
               type="number"
-              required
+              placeholder="0 (Default: 0)"
               value={formData.securityDeposit}
               onChange={(e) => setFormData({ ...formData, securityDeposit: e.target.value })}
             />

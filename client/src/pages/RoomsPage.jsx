@@ -48,7 +48,7 @@ const RoomsPage = () => {
     floor: 0,
     description: '',
     monthlyRent: '',
-    securityDeposit: '',
+    securityDeposit: 0,
     electricityMeterNumber: '',
     electricityBillingType: 'submeter',
     fixedElectricityAmount: 0,
@@ -390,8 +390,7 @@ const RoomsPage = () => {
             <Input
               label="Security Deposit (INR)"
               type="number"
-              required
-              placeholder="17000"
+              placeholder="0 (Default: 0)"
               value={formData.securityDeposit}
               onChange={(e) => setFormData({ ...formData, securityDeposit: e.target.value })}
             />

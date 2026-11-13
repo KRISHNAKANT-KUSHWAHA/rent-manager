@@ -111,7 +111,7 @@ const createAgreement = async (req, res) => {
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       monthlyRent: Number(monthlyRent),
-      securityDeposit: Number(securityDeposit),
+      securityDeposit: Number(securityDeposit) || 0,
       rentDueDay: Number(rentDueDay) || 5,
       ratePerUnit: Number(ratePerUnit) || 9.5,
       terms: Array.isArray(terms) && terms.length > 0 ? terms : undefined,

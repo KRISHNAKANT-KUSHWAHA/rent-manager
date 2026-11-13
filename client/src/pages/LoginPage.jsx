@@ -44,10 +44,10 @@ const LoginPage = () => {
     defaultElectricityRate: 9.5,
     upiId: '',
     initialRooms: [
-      { roomNumber: 'ROOM-101', floor: 0, monthlyRent: 8500, securityDeposit: 17000, electricityMeterNumber: 'MTR-101' },
-      { roomNumber: 'ROOM-102', floor: 0, monthlyRent: 9500, securityDeposit: 19000, electricityMeterNumber: 'MTR-102' },
-      { roomNumber: 'ROOM-201', floor: 1, monthlyRent: 8000, securityDeposit: 16000, electricityMeterNumber: 'MTR-201' },
-      { roomNumber: 'ROOM-202', floor: 1, monthlyRent: 7000, securityDeposit: 14000, electricityMeterNumber: 'MTR-202' },
+      { roomNumber: 'ROOM-101', floor: 0, monthlyRent: '', securityDeposit: 0, electricityMeterNumber: '' },
+      { roomNumber: 'ROOM-102', floor: 0, monthlyRent: '', securityDeposit: 0, electricityMeterNumber: '' },
+      { roomNumber: 'ROOM-201', floor: 1, monthlyRent: '', securityDeposit: 0, electricityMeterNumber: '' },
+      { roomNumber: 'ROOM-202', floor: 1, monthlyRent: '', securityDeposit: 0, electricityMeterNumber: '' },
     ],
   });
 
@@ -107,9 +107,9 @@ const LoginPage = () => {
         {
           roomNumber: `ROOM-${nextNum > 2 ? '20' : '10'}${nextNum}`,
           floor: nextNum > 2 ? 1 : 0,
-          monthlyRent: 8000,
-          securityDeposit: 16000,
-          electricityMeterNumber: `MTR-${nextNum > 2 ? '20' : '10'}${nextNum}`,
+          monthlyRent: '',
+          securityDeposit: 0,
+          electricityMeterNumber: '',
         },
       ],
     }));

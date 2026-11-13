@@ -72,3 +72,4 @@ const clearAllData = async () => {
 };
 
 clearAllData();
+

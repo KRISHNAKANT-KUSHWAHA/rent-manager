@@ -288,8 +288,8 @@ const setupOwner = async (req, res) => {
           const newRoom = await Room.create({
             roomNumber: roomNum,
             floor: Number(r.floor) || 0,
-            monthlyRent: Number(r.monthlyRent) || 8000,
-            securityDeposit: Number(r.securityDeposit) || 16000,
+            monthlyRent: Number(r.monthlyRent) || 0,
+            securityDeposit: Number(r.securityDeposit) || 0,
             electricityMeterNumber: r.electricityMeterNumber || `MTR-${roomNum}`,
             electricityBillingType: 'submeter',
             status: 'Available',

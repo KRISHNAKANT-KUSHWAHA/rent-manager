@@ -115,7 +115,7 @@ const createRoom = async (req, res) => {
       floor: Number(floor) || 0,
       description: description || '',
       monthlyRent: Number(monthlyRent),
-      securityDeposit: Number(securityDeposit),
+      securityDeposit: Number(securityDeposit) || 0,
       electricityMeterNumber: electricityMeterNumber || '',
       electricityBillingType: electricityBillingType || 'submeter',
       fixedElectricityAmount: Number(fixedElectricityAmount) || 0,
