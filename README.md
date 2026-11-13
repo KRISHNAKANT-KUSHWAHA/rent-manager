@@ -206,11 +206,18 @@ npm install
 cd ..
 ```
 
-### 4. Seed Realistic Initial Data
-Populate the database with realistic rooms (4 rooms), tenants, rental agreements, rent invoices, payments, meter readings, and maintenance expenses:
-```bash
-npm run seed
-```
+### 4. Seed or Clear Data
+- **To seed realistic demo data:**
+  ```bash
+  npm run seed
+  ```
+- **To purge all dummy data and start completely fresh:**
+  ```bash
+  npm run clear
+  ```
+
+### 5. First-Time Setup or Owner Login
+When the database is clean, opening `http://localhost:5173` presents the **First-Time House Setup Wizard** allowing the owner to configure their real owner credentials, residential house name and address, default electricity rate, and real room definitions.
 
 ### 5. Run the Application
 Open two terminal windows:
