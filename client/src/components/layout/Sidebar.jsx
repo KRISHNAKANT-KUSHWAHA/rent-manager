@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard,
@@ -34,6 +34,7 @@ const navItems = [
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async (e) => {
     e?.preventDefault?.();
@@ -42,6 +43,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       onClose();
     }
     await logout();
+    navigate('/login', { replace: true });
   };
 
   useEffect(() => {

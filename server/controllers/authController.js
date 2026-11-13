@@ -30,6 +30,7 @@ const setAuthCookie = (res, token) => {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
+    path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
@@ -224,11 +225,21 @@ const updateProfile = async (req, res) => {
  * @access  Private (Owner)
  */
 const logoutOwner = (req, res) => {
-  res.clearCookie('token', {
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+  };
+
+  res.clearCookie('token', cookieOptions);
+  res.cookie('token', '', {
+    ...cookieOptions,
+    expires: new Date(0),
+    maxAge: 0,
   });
+
   res.json({
     success: true,
     message: 'Logged out successfully',

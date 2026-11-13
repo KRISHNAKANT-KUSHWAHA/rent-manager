@@ -39,6 +39,10 @@ export const AuthProvider = ({ children }) => {
           setUser(data.user);
           localStorage.setItem('owner_user', JSON.stringify(data.user));
           setIsSetupRequired(false);
+        } else {
+          localStorage.removeItem('owner_user');
+          localStorage.removeItem('owner_token');
+          setUser(null);
         }
       } catch (err) {
         localStorage.removeItem('owner_user');
