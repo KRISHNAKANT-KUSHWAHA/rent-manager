@@ -40,7 +40,7 @@ const Modal = ({
         onClick={onClose}
       />
 
-      <div className="flex min-h-full items-end sm:items-center justify-center p-2 sm:p-6 text-center">
+      <div className="flex min-h-full items-end sm:items-center justify-center p-2 sm:p-6 text-center pb-20 sm:pb-6">
         <div
           className={`relative transform overflow-hidden rounded-2xl sm:rounded-3xl bg-white text-left shadow-2xl transition-all w-full ${maxWidth} border border-slate-100 animate-in fade-in zoom-in-95 duration-150 my-auto`}
         >
@@ -60,7 +60,7 @@ const Modal = ({
           </div>
 
           {/* Body */}
-          <div className="px-4 sm:px-6 py-4 sm:py-5 max-h-[82vh] overflow-y-auto overscroll-contain">{children}</div>
+          <div className="px-4 sm:px-6 py-4 sm:py-5 max-h-[65vh] sm:max-h-[75vh] overflow-y-auto overscroll-contain">{children}</div>
 
           {/* Optional Footer */}
           {footer && (

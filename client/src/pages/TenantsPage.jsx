@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { getTenants, createTenant, vacateTenant, deleteTenant } from '../api/tenantApi';
+import { getTenants, createTenant, updateTenant, vacateTenant, deleteTenant } from '../api/tenantApi';
 import { getRooms } from '../api/roomApi';
 import { useToast } from '../context/ToastContext';
 import { formatDate, maskAadhaar, formatCurrency } from '../utils/formatters';
@@ -25,6 +25,7 @@ import {
   Eye,
   LogOut,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 
 const TenantsPage = () => {
@@ -41,6 +42,7 @@ const TenantsPage = () => {
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isVacateOpen, setIsVacateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -74,6 +76,21 @@ const TenantsPage = () => {
     age: '',
     phone: '',
   });
+
+  // Edit form state
+  const [editFormData, setEditFormData] = useState(initialFormState);
+  const [editTab, setEditTab] = useState('personal');
+  const [editNewMember, setEditNewMember] = useState({ name: '', relationship: 'Family Member', age: '', phone: '' });
+
+  const handleAddEditMember = () => {
+    if (!editNewMember.name.trim()) return;
+    setEditFormData({ ...editFormData, familyMembers: [...(editFormData.familyMembers || []), { ...editNewMember }] });
+    setEditNewMember({ name: '', relationship: 'Family Member', age: '', phone: '' });
+  };
+
+  const handleRemoveEditMember = (idxToRemove) => {
+    setEditFormData({ ...editFormData, familyMembers: editFormData.familyMembers.filter((_, idx) => idx !== idxToRemove) });
+  };
 
   const handleAddMember = () => {
     if (!newMember.name.trim()) {
@@ -189,6 +206,41 @@ const TenantsPage = () => {
       fetchAvailableRooms();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to process vacating');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedTenant) return;
+    setSubmitting(true);
+    try {
+      const payload = {
+        fullName: editFormData.fullName,
+        fatherName: editFormData.fatherName,
+        gender: editFormData.gender,
+        occupation: editFormData.occupation,
+        employerOrCollege: editFormData.employerOrCollege,
+        permanentAddress: editFormData.permanentAddress,
+        currentAddress: editFormData.currentAddress,
+        primaryMobile: editFormData.primaryMobile,
+        alternateMobile: editFormData.alternateMobile,
+        email: editFormData.email,
+        familyMembers: editFormData.familyMembers,
+        aadhaarNumber: editFormData.aadhaarNumber,
+        voterId: editFormData.voterId,
+        panNumber: editFormData.panNumber,
+        monthlyRent: Number(editFormData.monthlyRent) || 0,
+        securityDeposit: Number(editFormData.securityDeposit) || 0,
+        rentDueDay: Number(editFormData.rentDueDay) || 5,
+      };
+      const res = await updateTenant(selectedTenant._id, payload);
+      toast.success(res.message || 'Tenant updated successfully!');
+      setIsEditOpen(false);
+      fetchTenants();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update tenant');
     } finally {
       setSubmitting(false);
     }
@@ -326,6 +378,44 @@ const TenantsPage = () => {
                 >
                   Profile
                 </Button>
+
+                {tenant.status === 'Active' && (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    className="text-blue-700 hover:text-blue-800 hover:bg-blue-50"
+                    icon={Pencil}
+                    title="Edit tenant"
+                    onClick={() => {
+                      setSelectedTenant(tenant);
+                      setEditFormData({
+                        fullName: tenant.fullName || '',
+                        fatherName: tenant.fatherName || '',
+                        gender: tenant.gender || 'Male',
+                        occupation: tenant.occupation || '',
+                        employerOrCollege: tenant.employerOrCollege || '',
+                        permanentAddress: tenant.permanentAddress || '',
+                        currentAddress: tenant.currentAddress || '',
+                        primaryMobile: tenant.primaryMobile || '',
+                        alternateMobile: tenant.alternateMobile || '',
+                        email: tenant.email || '',
+                        familyMembers: tenant.familyMembers || [],
+                        aadhaarNumber: tenant.aadhaarNumber || '',
+                        voterId: tenant.voterId || '',
+                        panNumber: tenant.panNumber || '',
+                        monthlyRent: tenant.monthlyRent || '',
+                        securityDeposit: tenant.securityDeposit ?? 0,
+                        rentDueDay: tenant.rentDueDay || 5,
+                        moveInDate: tenant.moveInDate ? tenant.moveInDate.slice(0, 10) : '',
+                      });
+                      setEditTab('personal');
+                      setEditNewMember({ name: '', relationship: 'Family Member', age: '', phone: '' });
+                      setIsEditOpen(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                )}
 
                 {tenant.status === 'Active' && (
                   <Button
@@ -855,6 +945,224 @@ const TenantsPage = () => {
               <Button type="submit" variant="danger" loading={submitting}>
                 Confirm Vacate & Settle
               </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Tenant Modal */}
+      {selectedTenant && (
+        <Modal
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          title={`Edit Tenant: ${selectedTenant.fullName}`}
+          subtitle="Update personal details, room members, and identity proofs. Room assignment is managed via vacate flow."
+          maxWidth="max-w-2xl"
+        >
+          {/* Tabs */}
+          <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100 overflow-x-auto whitespace-nowrap text-xs font-bold no-scrollbar">
+            {['personal', 'family', 'identity'].map((tab, i) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setEditTab(tab)}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
+                  editTab === tab
+                    ? 'bg-slate-900 text-white shadow-soft-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {i + 1}. {tab === 'personal' ? 'Personal Info' : tab === 'family' ? 'Room Members' : 'Identity Proofs'}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            {/* Tab 1: Personal */}
+            {editTab === 'personal' && (
+              <div className="space-y-4 animate-in fade-in">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <Input
+                    label="Full Name"
+                    required
+                    value={editFormData.fullName}
+                    onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                  />
+                  <Input
+                    label="Father's Name"
+                    required
+                    value={editFormData.fatherName}
+                    onChange={(e) => setEditFormData({ ...editFormData, fatherName: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <Select
+                    label="Gender"
+                    value={editFormData.gender}
+                    onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
+                    options={[
+                      { value: 'Male', label: 'Male' },
+                      { value: 'Female', label: 'Female' },
+                      { value: 'Other', label: 'Other' },
+                    ]}
+                  />
+                  <Input
+                    label="Primary Mobile"
+                    required
+                    type="tel"
+                    value={editFormData.primaryMobile}
+                    onChange={(e) => setEditFormData({ ...editFormData, primaryMobile: e.target.value })}
+                  />
+                  <Input
+                    label="Alternate Mobile"
+                    type="tel"
+                    value={editFormData.alternateMobile}
+                    onChange={(e) => setEditFormData({ ...editFormData, alternateMobile: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <Input
+                    label="Occupation"
+                    value={editFormData.occupation}
+                    onChange={(e) => setEditFormData({ ...editFormData, occupation: e.target.value })}
+                  />
+                  <Input
+                    label="Company / College"
+                    value={editFormData.employerOrCollege}
+                    onChange={(e) => setEditFormData({ ...editFormData, employerOrCollege: e.target.value })}
+                  />
+                </div>
+                <Input
+                  label="Permanent Address"
+                  value={editFormData.permanentAddress}
+                  onChange={(e) => setEditFormData({ ...editFormData, permanentAddress: e.target.value })}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <Input
+                    label="Monthly Rent (INR)"
+                    type="text"
+                    inputMode="numeric"
+                    value={editFormData.monthlyRent}
+                    onChange={(e) => setEditFormData({ ...editFormData, monthlyRent: e.target.value.replace(/[^0-9]/g, '') })}
+                  />
+                  <Input
+                    label="Rent Due Day (1–31)"
+                    type="text"
+                    inputMode="numeric"
+                    value={editFormData.rentDueDay}
+                    onChange={(e) => setEditFormData({ ...editFormData, rentDueDay: e.target.value.replace(/[^0-9]/g, '') })}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Room Members */}
+            {editTab === 'family' && (
+              <div className="space-y-4 animate-in fade-in">
+                {editFormData.familyMembers.length > 0 && (
+                  <div className="space-y-2">
+                    {editFormData.familyMembers.map((m, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                        <div>
+                          <span className="font-bold text-slate-900">{m.name}</span>
+                          <span className="text-slate-500 ml-2">({m.relationship}{m.age ? `, Age ${m.age}` : ''})</span>
+                          {m.phone && <span className="text-slate-500 ml-2">📞 {m.phone}</span>}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEditMember(idx)}
+                          className="text-red-500 hover:text-red-700 font-bold px-1.5"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <p className="text-xs font-bold text-slate-700">Add Member</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      label="Name"
+                      value={editNewMember.name}
+                      onChange={(e) => setEditNewMember({ ...editNewMember, name: e.target.value })}
+                    />
+                    <Input
+                      label="Relationship"
+                      value={editNewMember.relationship}
+                      onChange={(e) => setEditNewMember({ ...editNewMember, relationship: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Input
+                        label="Mobile"
+                        type="tel"
+                        value={editNewMember.phone}
+                        onChange={(e) => setEditNewMember({ ...editNewMember, phone: e.target.value })}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddEditMember}
+                      className="h-10 px-3.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl transition shrink-0 self-end mb-0.5 shadow-sm"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3: Identity */}
+            {editTab === 'identity' && (
+              <div className="space-y-4 animate-in fade-in">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
+                  Identity numbers will be safely stored and masked in the UI.
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <Input
+                    label="Aadhaar Number"
+                    value={editFormData.aadhaarNumber}
+                    onChange={(e) => setEditFormData({ ...editFormData, aadhaarNumber: e.target.value })}
+                  />
+                  <Input
+                    label="Voter ID"
+                    value={editFormData.voterId}
+                    onChange={(e) => setEditFormData({ ...editFormData, voterId: e.target.value })}
+                  />
+                </div>
+                <Input
+                  label="PAN Number"
+                  value={editFormData.panNumber}
+                  onChange={(e) => setEditFormData({ ...editFormData, panNumber: e.target.value })}
+                />
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <Button type="button" variant="secondary" onClick={() => setIsEditOpen(false)}>
+                Cancel
+              </Button>
+              <div className="flex items-center gap-2">
+                {editTab !== 'identity' ? (
+                  <Button
+                    type="button"
+                    variant="dark"
+                    onClick={() => {
+                      if (editTab === 'personal') setEditTab('family');
+                      else if (editTab === 'family') setEditTab('identity');
+                    }}
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <Button type="submit" variant="brand" loading={submitting}>
+                    Save Changes
+                  </Button>
+                )}
+              </div>
             </div>
           </form>
         </Modal>
