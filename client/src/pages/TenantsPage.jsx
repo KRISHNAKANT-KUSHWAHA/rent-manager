@@ -92,6 +92,37 @@ const TenantsPage = () => {
     setEditFormData({ ...editFormData, familyMembers: editFormData.familyMembers.filter((_, idx) => idx !== idxToRemove) });
   };
 
+  const handleEditRoomSelect = (roomId) => {
+    if (!roomId) {
+      setEditFormData({
+        ...editFormData,
+        assignedRoomId: '',
+      });
+      return;
+    }
+    const selected = availableRooms.find((r) => r._id === roomId);
+    if (selected) {
+      setEditFormData({
+        ...editFormData,
+        assignedRoomId: roomId,
+        monthlyRent: selected.monthlyRent || editFormData.monthlyRent,
+        securityDeposit: selected.securityDeposit !== undefined ? selected.securityDeposit : editFormData.securityDeposit,
+      });
+    } else if (selectedTenant?.currentRoom && selectedTenant.currentRoom._id === roomId) {
+      setEditFormData({
+        ...editFormData,
+        assignedRoomId: roomId,
+        monthlyRent: selectedTenant.monthlyRent || selectedTenant.currentRoom.monthlyRent || editFormData.monthlyRent,
+        securityDeposit: selectedTenant.securityDeposit ?? (selectedTenant.currentRoom.securityDeposit ?? editFormData.securityDeposit),
+      });
+    } else {
+      setEditFormData({
+        ...editFormData,
+        assignedRoomId: roomId,
+      });
+    }
+  };
+
   const handleAddMember = () => {
     if (!newMember.name.trim()) {
       toast.error('Please enter family member or co-occupant name');
@@ -231,6 +262,7 @@ const TenantsPage = () => {
         aadhaarNumber: editFormData.aadhaarNumber,
         voterId: editFormData.voterId,
         panNumber: editFormData.panNumber,
+        assignedRoomId: editFormData.assignedRoomId,
         monthlyRent: Number(editFormData.monthlyRent) || 0,
         securityDeposit: Number(editFormData.securityDeposit) || 0,
         rentDueDay: Number(editFormData.rentDueDay) || 5,
@@ -239,6 +271,7 @@ const TenantsPage = () => {
       toast.success(res.message || 'Tenant updated successfully!');
       setIsEditOpen(false);
       fetchTenants();
+      fetchAvailableRooms();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update tenant');
     } finally {
@@ -403,8 +436,9 @@ const TenantsPage = () => {
                         aadhaarNumber: tenant.aadhaarNumber || '',
                         voterId: tenant.voterId || '',
                         panNumber: tenant.panNumber || '',
-                        monthlyRent: tenant.monthlyRent || '',
-                        securityDeposit: tenant.securityDeposit ?? 0,
+                        assignedRoomId: tenant.currentRoom?._id || '',
+                        monthlyRent: tenant.monthlyRent || (tenant.currentRoom?.monthlyRent ?? ''),
+                        securityDeposit: tenant.securityDeposit ?? (tenant.currentRoom?.securityDeposit ?? 0),
                         rentDueDay: tenant.rentDueDay || 5,
                         moveInDate: tenant.moveInDate ? tenant.moveInDate.slice(0, 10) : '',
                       });
@@ -956,7 +990,7 @@ const TenantsPage = () => {
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
           title={`Edit Tenant: ${selectedTenant.fullName}`}
-          subtitle="Update personal details, room members, and identity proofs. Room assignment is managed via vacate flow."
+          subtitle="Update personal details, room members, identity proofs, and assign or change room."
           maxWidth="max-w-2xl"
         >
           {/* Tabs */}
@@ -1127,20 +1161,25 @@ const TenantsPage = () => {
             {/* Tab 4: Room & Rent */}
             {editTab === 'rent' && (
               <div className="space-y-4 animate-in fade-in">
-                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 leading-relaxed">
-                  <strong>Note:</strong> To change the assigned room, use the Vacate flow first, then register the tenant in the new room.
-                </div>
-                {selectedTenant?.currentRoom && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">
-                      🏠
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-900">Current Room: {selectedTenant.currentRoom.roomNumber}</div>
-                      <div className="text-[11px] text-slate-500">{selectedTenant.currentRoom.floorName || `Floor ${selectedTenant.currentRoom.floor}`}</div>
-                    </div>
-                  </div>
-                )}
+                <Select
+                  label="Assign / Change Room"
+                  value={editFormData.assignedRoomId}
+                  onChange={(e) => handleEditRoomSelect(e.target.value)}
+                >
+                  <option value="">-- No Room Assigned / Vacant --</option>
+                  {selectedTenant?.currentRoom && (
+                    <option value={selectedTenant.currentRoom._id}>
+                      {selectedTenant.currentRoom.roomNumber} ({selectedTenant.currentRoom.floorName || `Floor ${selectedTenant.currentRoom.floor}`}) - Currently Assigned
+                    </option>
+                  )}
+                  {availableRooms
+                    .filter((r) => r._id !== selectedTenant?.currentRoom?._id)
+                    .map((r) => (
+                      <option key={r._id} value={r._id}>
+                        {r.roomNumber} ({r.floorName || `Floor ${r.floor}`}) - ₹{r.monthlyRent}/mo (Available)
+                      </option>
+                    ))}
+                </Select>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <Input
                     label="Monthly Rent (INR)"

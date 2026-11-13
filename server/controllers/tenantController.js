@@ -36,13 +36,33 @@ const getAllTenants = async (req, res) => {
     }
 
     const tenants = await Tenant.find(query)
-      .populate('currentRoom', 'roomNumber floor floorName monthlyRent')
+      .populate('currentRoom', 'roomNumber floor floorName monthlyRent securityDeposit')
       .sort({ createdAt: -1 });
+
+    const tenantIds = tenants.map((t) => t._id);
+    const agreements = await RentalAgreement.find({
+      tenant: { $in: tenantIds },
+      status: 'Active',
+    });
+
+    const agreementMap = {};
+    agreements.forEach((agr) => {
+      agreementMap[agr.tenant.toString()] = agr;
+    });
+
+    const formattedTenants = tenants.map((t) => {
+      const agr = agreementMap[t._id.toString()];
+      const tObj = t.toObject();
+      tObj.monthlyRent = agr ? agr.monthlyRent : (t.currentRoom?.monthlyRent || '');
+      tObj.securityDeposit = agr ? agr.securityDeposit : (t.currentRoom?.securityDeposit ?? 0);
+      tObj.rentDueDay = agr ? agr.rentDueDay : 5;
+      return tObj;
+    });
 
     res.json({
       success: true,
-      count: tenants.length,
-      tenants,
+      count: formattedTenants.length,
+      tenants: formattedTenants,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -245,19 +265,110 @@ const updateTenant = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Tenant not found' });
     }
 
-    const updates = req.body;
-    // Don't overwrite currentRoom through simple update, use room assignment flow
-    delete updates.currentRoom;
+    const {
+      assignedRoomId,
+      monthlyRent,
+      securityDeposit,
+      rentDueDay,
+      ...otherUpdates
+    } = req.body;
 
-    Object.assign(tenant, updates);
+    const currentRoomIdStr = tenant.currentRoom ? tenant.currentRoom.toString() : '';
+    const newRoomIdStr = (assignedRoomId !== undefined && assignedRoomId !== null) ? assignedRoomId.toString().trim() : currentRoomIdStr;
+
+    // Handle room assignment or transfer if assignedRoomId is provided in request
+    if (assignedRoomId !== undefined && newRoomIdStr !== currentRoomIdStr) {
+      // 1. If currently assigned to an old room, free it up
+      if (currentRoomIdStr) {
+        await Room.findByIdAndUpdate(tenant.currentRoom, {
+          status: 'Available',
+          currentTenant: null,
+          currentAgreement: null,
+        });
+
+        // Terminate existing active agreement
+        await RentalAgreement.updateMany(
+          { tenant: tenant._id, status: 'Active' },
+          {
+            status: 'Terminated',
+            vacatingDate: new Date(),
+            notes: 'Room changed via tenant edit profile',
+          }
+        );
+      }
+
+      // 2. If assigning to a new room
+      if (newRoomIdStr) {
+        const newRoom = await Room.findById(newRoomIdStr);
+        if (!newRoom) {
+          return res.status(404).json({ success: false, message: 'Selected room not found' });
+        }
+
+        if (newRoom.status === 'Occupied' && newRoom.currentTenant && newRoom.currentTenant.toString() !== tenant._id.toString()) {
+          return res.status(400).json({
+            success: false,
+            message: `Room ${newRoom.roomNumber} is already occupied by another tenant.`,
+          });
+        }
+
+        const agreedRent = (monthlyRent !== undefined && monthlyRent !== '') ? Number(monthlyRent) : newRoom.monthlyRent;
+        const agreedDeposit = (securityDeposit !== undefined && securityDeposit !== '') ? Number(securityDeposit) : (newRoom.securityDeposit || 0);
+        const agrNum = `AGR-${newRoom.roomNumber}-${Date.now().toString().slice(-4)}`;
+        const start = tenant.moveInDate || new Date();
+        const end = new Date(new Date(start).setFullYear(start.getFullYear() + 1));
+
+        const agreement = await RentalAgreement.create({
+          agreementNumber: agrNum,
+          tenant: tenant._id,
+          room: newRoom._id,
+          startDate: start,
+          endDate: end,
+          monthlyRent: agreedRent,
+          securityDeposit: agreedDeposit,
+          rentDueDay: Number(rentDueDay) || 5,
+          status: 'Active',
+        });
+
+        newRoom.status = 'Occupied';
+        newRoom.currentTenant = tenant._id;
+        newRoom.currentAgreement = agreement._id;
+        await newRoom.save();
+
+        tenant.currentRoom = newRoom._id;
+        tenant.status = 'Active';
+      } else {
+        // Room unassigned / removed
+        tenant.currentRoom = null;
+      }
+    } else {
+      // Room remained unchanged. Update agreement rent/deposit/due day if specified
+      if (currentRoomIdStr && (monthlyRent !== undefined || securityDeposit !== undefined || rentDueDay !== undefined)) {
+        const activeAgreement = await RentalAgreement.findOne({
+          tenant: tenant._id,
+          status: 'Active',
+        });
+        if (activeAgreement) {
+          if (monthlyRent !== undefined && monthlyRent !== '') activeAgreement.monthlyRent = Number(monthlyRent);
+          if (securityDeposit !== undefined && securityDeposit !== '') activeAgreement.securityDeposit = Number(securityDeposit);
+          if (rentDueDay !== undefined && rentDueDay !== '') activeAgreement.rentDueDay = Number(rentDueDay);
+          await activeAgreement.save();
+        }
+      }
+    }
+
+    delete otherUpdates.currentRoom;
+    Object.assign(tenant, otherUpdates);
     await tenant.save();
 
     await logAudit('UPDATE_TENANT', 'TENANT', { tenantName: tenant.fullName }, req);
 
+    const updatedTenant = await Tenant.findById(tenant._id)
+      .populate('currentRoom', 'roomNumber floor floorName monthlyRent securityDeposit');
+
     res.json({
       success: true,
-      message: 'Tenant details updated successfully',
-      tenant,
+      message: 'Tenant and room details updated successfully',
+      tenant: updatedTenant,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
