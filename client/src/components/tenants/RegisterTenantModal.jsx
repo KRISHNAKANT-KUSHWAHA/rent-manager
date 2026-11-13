@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Select from '../common/Select';
-import { Users, Trash2 } from 'lucide-react';
+import { Users, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
 import { createTenant } from '../../api/tenantApi';
 import { useToast } from '../../context/ToastContext';
 
@@ -34,12 +34,36 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
   const [formData, setFormData] = useState(initialFormState);
   const [formTab, setFormTab] = useState('personal');
   const [submitting, setSubmitting] = useState(false);
+  const [canSubmit, setCanSubmit] = useState(false);
+
   const [newMember, setNewMember] = useState({
     name: '',
     relationship: 'Family Member',
     age: '',
     phone: '',
   });
+
+  // Reset state whenever modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(initialFormState);
+      setFormTab('personal');
+      setCanSubmit(false);
+      setSubmitting(false);
+    }
+  }, [isOpen]);
+
+  const handleTabChange = (targetTab) => {
+    if (targetTab === 'room') {
+      setCanSubmit(false);
+      setFormTab('room');
+      // 500ms safety lock: Prevents mouse click on "Next" from bleeding onto "Complete Registration"
+      setTimeout(() => setCanSubmit(true), 500);
+    } else {
+      setCanSubmit(false);
+      setFormTab(targetTab);
+    }
+  };
 
   const handleAddMember = () => {
     if (!newMember.name.trim()) {
@@ -72,19 +96,32 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
 
   const handleSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
+
+    // Guard 1: Must be on Room tab
     if (formTab !== 'room') return;
 
-    if (!formData.fullName.trim() || !formData.fatherName.trim() || !formData.primaryMobile.trim() || !formData.permanentAddress.trim()) {
-      toast.error('Please enter Full Name, Father Name, Mobile No. and Permanent Address');
+    // Guard 2: Safety delay lock must be released
+    if (!canSubmit) return;
+
+    // Guard 3: Required personal details
+    if (
+      !formData.fullName.trim() ||
+      !formData.fatherName.trim() ||
+      !formData.primaryMobile.trim() ||
+      !formData.permanentAddress.trim()
+    ) {
+      toast.error('Please fill in Name, Father Name, Mobile and Permanent Address');
       setFormTab('personal');
       return;
     }
 
+    // Guard 4: Must select an available room
     if (!formData.assignedRoomId) {
-      toast.error('Please select an available room from the list');
+      toast.error('Please select an available room from the dropdown list');
       return;
     }
 
+    // Guard 5: Valid monthly rent
     if (!formData.monthlyRent || Number(formData.monthlyRent) <= 0) {
       toast.error('Please enter the agreed monthly rent');
       return;
@@ -134,7 +171,7 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
           <button
             key={tab.id}
             type="button"
-            onClick={() => setFormTab(tab.id)}
+            onClick={() => handleTabChange(tab.id)}
             className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
               formTab === tab.id
                 ? 'bg-slate-900 text-white shadow-soft-sm'
@@ -146,13 +183,7 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
         ))}
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
-        }}
-        className="space-y-4"
-      >
+      <div className="space-y-4">
         {/* Tab 1: Personal Details */}
         {formTab === 'personal' && (
           <div className="space-y-4 animate-in fade-in duration-100">
@@ -396,21 +427,29 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
         {formTab === 'room' && (
           <div className="space-y-4 animate-in fade-in duration-100">
             <Select
-              label="Assign Room"
+              label="Assign Room *"
               value={formData.assignedRoomId}
               onChange={(e) => handleRoomSelect(e.target.value)}
+              required
             >
-              <option value="">-- Select an Available Room --</option>
+              <option value="">-- Click to Select an Available Room --</option>
               {availableRooms.map((r) => (
                 <option key={r._id} value={r._id}>
-                  {r.roomNumber} ({r.floorName || `Floor ${r.floor}`}) - ₹{r.monthlyRent}/mo
+                  {r.roomNumber} ({r.floorName || `Floor ${r.floor}`}) — ₹{r.monthlyRent}/mo
                 </option>
               ))}
             </Select>
 
+            {!formData.assignedRoomId && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Please select an available room from the dropdown above to complete registration.</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <Input
-                label="Agreed Monthly Rent (INR)"
+                label="Agreed Monthly Rent (INR) *"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -424,7 +463,7 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
                 }
               />
               <Input
-                label="Security Deposit (INR) - Defaults to 0"
+                label="Security Deposit (INR)"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -481,9 +520,9 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
                 type="button"
                 variant="ghost"
                 onClick={() => {
-                  if (formTab === 'room') setFormTab('identity');
-                  else if (formTab === 'identity') setFormTab('family');
-                  else if (formTab === 'family') setFormTab('personal');
+                  if (formTab === 'room') handleTabChange('identity');
+                  else if (formTab === 'identity') handleTabChange('family');
+                  else if (formTab === 'family') handleTabChange('personal');
                 }}
               >
                 ← Back
@@ -494,7 +533,6 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
           <div className="flex items-center gap-2">
             {formTab !== 'room' ? (
               <Button
-                key="btn-next"
                 type="button"
                 variant="dark"
                 onClick={() => {
@@ -508,11 +546,11 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
                       toast.error('Please enter Full Name, Father Name, Mobile No. and Permanent Address');
                       return;
                     }
-                    setFormTab('family');
+                    handleTabChange('family');
                   } else if (formTab === 'family') {
-                    setFormTab('identity');
+                    handleTabChange('identity');
                   } else if (formTab === 'identity') {
-                    setFormTab('room');
+                    handleTabChange('room');
                   }
                 }}
               >
@@ -520,18 +558,19 @@ const RegisterTenantModal = ({ isOpen, onClose, availableRooms = [], onSuccess }
               </Button>
             ) : (
               <Button
-                key="btn-submit"
                 type="button"
                 variant="brand"
                 loading={submitting}
+                disabled={!canSubmit || !formData.assignedRoomId}
                 onClick={handleSubmit}
               >
+                <CheckCircle className="w-4 h-4 mr-1.5" />
                 Complete Registration
               </Button>
             )}
           </div>
         </div>
-      </form>
+      </div>
     </Modal>
   );
 };

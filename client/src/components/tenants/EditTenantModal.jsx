@@ -10,6 +10,8 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
   const toast = useToast();
   const [editTab, setEditTab] = useState('personal');
   const [submitting, setSubmitting] = useState(false);
+  const [canSubmit, setCanSubmit] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: '',
     fatherName: '',
@@ -57,9 +59,21 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
         moveInDate: tenant.moveInDate ? tenant.moveInDate.slice(0, 10) : '',
       });
       setEditTab('personal');
+      setCanSubmit(false);
       setNewMember({ name: '', relationship: 'Family Member', age: '', phone: '' });
     }
   }, [tenant]);
+
+  const handleTabChange = (targetTab) => {
+    if (targetTab === 'rent') {
+      setCanSubmit(false);
+      setEditTab('rent');
+      setTimeout(() => setCanSubmit(true), 400);
+    } else {
+      setCanSubmit(false);
+      setEditTab(targetTab);
+    }
+  };
 
   const handleAddMember = () => {
     if (!newMember.name.trim()) return;
@@ -106,6 +120,8 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
     if (e && e.preventDefault) e.preventDefault();
     if (!tenant) return;
     if (editTab !== 'rent') return;
+    if (!canSubmit) return;
+
     setSubmitting(true);
 
     try {
@@ -163,7 +179,7 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
           <button
             key={tab.id}
             type="button"
-            onClick={() => setEditTab(tab.id)}
+            onClick={() => handleTabChange(tab.id)}
             className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
               editTab === tab.id
                 ? 'bg-slate-900 text-white shadow-soft-sm'
@@ -175,13 +191,7 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
         ))}
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
-        }}
-        className="space-y-4"
-      >
+      <div className="space-y-4">
         {/* Tab 1: Personal */}
         {editTab === 'personal' && (
           <div className="space-y-4 animate-in fade-in duration-100">
@@ -403,9 +413,9 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
                 type="button"
                 variant="ghost"
                 onClick={() => {
-                  if (editTab === 'rent') setEditTab('identity');
-                  else if (editTab === 'identity') setEditTab('family');
-                  else if (editTab === 'family') setEditTab('personal');
+                  if (editTab === 'rent') handleTabChange('identity');
+                  else if (editTab === 'identity') handleTabChange('family');
+                  else if (editTab === 'family') handleTabChange('personal');
                 }}
               >
                 ← Back
@@ -420,9 +430,9 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
                 type="button"
                 variant="dark"
                 onClick={() => {
-                  if (editTab === 'personal') setEditTab('family');
-                  else if (editTab === 'family') setEditTab('identity');
-                  else if (editTab === 'identity') setEditTab('rent');
+                  if (editTab === 'personal') handleTabChange('family');
+                  else if (editTab === 'family') handleTabChange('identity');
+                  else if (editTab === 'identity') handleTabChange('rent');
                 }}
               >
                 Next Step →
@@ -433,6 +443,7 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
                 type="button"
                 variant="brand"
                 loading={submitting}
+                disabled={!canSubmit}
                 onClick={handleSubmit}
               >
                 Save Changes
@@ -440,7 +451,7 @@ const EditTenantModal = ({ isOpen, onClose, tenant, availableRooms = [], onSucce
             )}
           </div>
         </div>
-      </form>
+      </div>
     </Modal>
   );
 };

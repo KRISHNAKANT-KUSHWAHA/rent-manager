@@ -5,7 +5,7 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/rent_manager', {
       serverSelectionTimeoutMS: 5000,
     });
-    console.log(`[MongoDB] Connected successfully: ${conn.connection.host}`);
+    console.log(`MongoDB Connected successfully: ${conn.connection.host}`);
     return conn;
   } catch (error) {
     console.error(`[MongoDB] Connection error: ${error.message}`);
