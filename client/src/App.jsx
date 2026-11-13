@@ -6,6 +6,7 @@ import { ToastProvider } from './context/ToastContext';
 // Layout & Common
 import Layout from './components/layout/Layout';
 import Skeleton from './components/common/Skeleton';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -57,48 +58,50 @@ const PublicRoute = ({ children }) => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ToastProvider>
-          <Routes>
-            {/* Public Login Route */}
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <LoginPage />
-                </PublicRoute>
-              }
-            />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <ToastProvider>
+            <Routes>
+              {/* Public Login Route */}
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <LoginPage />
+                  </PublicRoute>
+                }
+              />
 
-            {/* Protected Owner Routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<DashboardPage />} />
-              <Route path="rooms" element={<RoomsPage />} />
-              <Route path="tenants" element={<TenantsPage />} />
-              <Route path="tenants/:id" element={<TenantDetailPage />} />
-              <Route path="documents" element={<DocumentsPage />} />
-              <Route path="agreements" element={<AgreementsPage />} />
-              <Route path="rent" element={<RentPage />} />
-              <Route path="electricity" element={<ElectricityPage />} />
-              <Route path="ledger" element={<LedgerPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
+              {/* Protected Owner Routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<DashboardPage />} />
+                <Route path="rooms" element={<RoomsPage />} />
+                <Route path="tenants" element={<TenantsPage />} />
+                <Route path="tenants/:id" element={<TenantDetailPage />} />
+                <Route path="documents" element={<DocumentsPage />} />
+                <Route path="agreements" element={<AgreementsPage />} />
+                <Route path="rent" element={<RentPage />} />
+                <Route path="electricity" element={<ElectricityPage />} />
+                <Route path="ledger" element={<LedgerPage />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
 
-            {/* Catch-all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </ToastProvider>
-      </AuthProvider>
-    </BrowserRouter>
+              {/* Catch-all */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </ToastProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

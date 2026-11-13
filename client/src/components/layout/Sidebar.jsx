@@ -35,6 +35,15 @@ const navItems = [
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
 
+  const handleLogout = async (e) => {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    if (typeof onClose === 'function') {
+      onClose();
+    }
+    await logout();
+  };
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -135,7 +144,8 @@ const Sidebar = ({ isOpen, onClose }) => {
               </div>
             </div>
             <button
-              onClick={logout}
+              type="button"
+              onClick={handleLogout}
               title="Logout"
               className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
             >

@@ -6,6 +6,7 @@ import {
   setupOwner as apiSetup,
   getAuthStatus,
 } from '../api/authApi';
+import { invalidateCache } from '../hooks/useDataCache';
 
 const AuthContext = createContext(null);
 
@@ -83,10 +84,14 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       // ignore network errors on logout
     } finally {
-      setUser(null);
       localStorage.removeItem('owner_user');
       localStorage.removeItem('owner_token');
-      window.location.href = '/login';
+      try {
+        invalidateCache();
+      } catch (err) {
+        // ignore
+      }
+      setUser(null);
     }
   };
 
