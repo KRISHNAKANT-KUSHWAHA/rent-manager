@@ -170,6 +170,8 @@ const recordRentPayment = async (req, res) => {
   try {
     const {
       invoiceId,
+      tenantId,
+      billingMonth,
       amountPaid,
       paymentDate,
       paymentMethod,
@@ -177,20 +179,101 @@ const recordRentPayment = async (req, res) => {
       notes,
     } = req.body;
 
-    const invoice = await RentInvoice.findById(invoiceId)
-      .populate('tenant')
-      .populate('room')
-      .populate('agreement');
-
-    if (!invoice) {
-      return res.status(404).json({ success: false, message: 'Invoice not found' });
-    }
-
     const paymentAmount = Number(amountPaid);
     if (!paymentAmount || paymentAmount <= 0) {
       return res.status(400).json({
         success: false,
         message: 'Payment amount must be greater than zero',
+      });
+    }
+
+    let invoice = null;
+
+    if (invoiceId) {
+      invoice = await RentInvoice.findById(invoiceId)
+        .populate('tenant')
+        .populate('room')
+        .populate('agreement');
+    } else if (tenantId) {
+      const targetMonth = billingMonth || new Date().toISOString().slice(0, 7);
+
+      // 1. Try finding existing invoice for this tenant & month
+      invoice = await RentInvoice.findOne({
+        tenant: tenantId,
+        billingMonth: targetMonth,
+      })
+        .populate('tenant')
+        .populate('room')
+        .populate('agreement');
+
+      // 2. If not found, try finding ANY unpaid/pending invoice for this tenant
+      if (!invoice) {
+        invoice = await RentInvoice.findOne({
+          tenant: tenantId,
+          status: { $in: ['Pending', 'Partially Paid', 'Overdue'] },
+        })
+          .sort({ billingMonth: -1 })
+          .populate('tenant')
+          .populate('room')
+          .populate('agreement');
+      }
+
+      // 3. If still no invoice exists, auto-create one from active agreement
+      if (!invoice) {
+        const agreement = await RentalAgreement.findOne({
+          tenant: tenantId,
+          status: 'Active',
+        })
+          .populate('room')
+          .populate('tenant');
+
+        if (!agreement) {
+          return res.status(400).json({
+            success: false,
+            message: 'No active room or rental agreement found for this tenant.',
+          });
+        }
+
+        const prevInvoice = await RentInvoice.findOne({
+          agreement: agreement._id,
+          billingMonth: { $lt: targetMonth },
+        }).sort({ billingMonth: -1 });
+
+        const previousBalance = prevInvoice ? Math.max(0, prevInvoice.remainingBalance) : 0;
+        const rentAmount = agreement.monthlyRent;
+        const totalDue = rentAmount + previousBalance;
+
+        const [yearStr, monthStr] = targetMonth.split('-');
+        const dueDay = agreement.rentDueDay || 5;
+        const dueDate = new Date(Number(yearStr), Number(monthStr) - 1, dueDay);
+        const invoiceNumber = `INV-${targetMonth.replace('-', '')}-${agreement.room?.roomNumber || 'RM'}-${Date.now().toString().slice(-3)}`;
+
+        invoice = await RentInvoice.create({
+          invoiceNumber,
+          agreement: agreement._id,
+          tenant: agreement.tenant._id,
+          room: agreement.room._id,
+          billingMonth: targetMonth,
+          rentAmount,
+          previousBalance,
+          totalDue,
+          amountPaid: 0,
+          remainingBalance: totalDue,
+          dueDate,
+          status: new Date() > dueDate ? 'Overdue' : 'Pending',
+        });
+
+        invoice = await RentInvoice.findById(invoice._id)
+          .populate('tenant')
+          .populate('room')
+          .populate('agreement');
+      }
+    }
+
+    if (!invoice) {
+      return res.status(404).json({
+        success: false,
+        message: 'No invoice or active tenant selected to apply payment to.',
       });
     }
 
@@ -203,7 +286,7 @@ const recordRentPayment = async (req, res) => {
       invoice: invoice._id,
       tenant: invoice.tenant._id,
       room: invoice.room._id,
-      agreement: invoice.agreement._id,
+      agreement: invoice.agreement?._id || invoice.agreement || null,
       amountPaid: paymentAmount,
       paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
       paymentMethod: paymentMethod || 'UPI',
@@ -234,14 +317,14 @@ const recordRentPayment = async (req, res) => {
         receiptNumber: recNum,
         amount: paymentAmount,
         invoiceNumber: invoice.invoiceNumber,
-        tenant: invoice.tenant.fullName,
+        tenant: invoice.tenant?.fullName,
       },
       req
     );
 
     res.status(201).json({
       success: true,
-      message: 'Rent payment recorded successfully',
+      message: `Rent payment of ₹${paymentAmount} recorded successfully!`,
       payment,
       invoice,
     });
