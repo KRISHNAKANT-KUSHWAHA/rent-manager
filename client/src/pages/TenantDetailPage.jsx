@@ -311,7 +311,7 @@ const TenantDetailPage = () => {
             )}
 
             {/* Financial Balances Bar */}
-            <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 gap-3 text-center text-xs">
+            <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 text-center text-xs">
               <div className="p-3 rounded-xl bg-slate-50">
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">
                   Total Rent Billed

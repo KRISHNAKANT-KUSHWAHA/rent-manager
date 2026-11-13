@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -37,6 +37,17 @@ const navItems = [
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -48,7 +59,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       )}
 
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-[#0f172a] text-white flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 sm:w-64 bg-[#0f172a] text-white flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } shadow-2xl border-r border-slate-800`}
       >
@@ -80,7 +91,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-190px)]">
+          <nav className="p-3 space-y-1 overflow-y-auto overscroll-contain max-h-[calc(100dvh-190px)] sm:max-h-[calc(100vh-190px)]">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (

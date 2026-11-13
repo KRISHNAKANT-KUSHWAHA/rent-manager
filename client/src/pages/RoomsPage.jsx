@@ -503,7 +503,7 @@ const RoomsPage = () => {
                     </span>
                     <Badge status="Active" />
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
                     <div>Mobile: {roomDetails.currentTenant?.primaryMobile}</div>
                     <div>Agreement: {roomDetails.currentAgreement?.agreementNumber}</div>
                     <div>

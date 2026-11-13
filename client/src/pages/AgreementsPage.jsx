@@ -368,7 +368,7 @@ const AgreementsPage = () => {
         maxWidth="max-w-xl"
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select
               label="Select Room"
               required
@@ -406,7 +406,7 @@ const AgreementsPage = () => {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Start Date"
               type="date"
@@ -423,7 +423,7 @@ const AgreementsPage = () => {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input
               label="Monthly Rent (₹)"
               type="text"
@@ -559,7 +559,7 @@ const AgreementsPage = () => {
               ]}
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Refund Amount (INR)"
                 type="text"
@@ -595,7 +595,7 @@ const AgreementsPage = () => {
               onChange={(e) => setRefundData({ ...refundData, deductionReason: e.target.value })}
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
                 label="Payment Method"
                 value={refundData.paymentMethod}

@@ -71,7 +71,7 @@ const ReportsPage = () => {
         title="Financial Reports & Analytics"
         subtitle="Annual & monthly statements, room performance, maintenance cost breakdown, and CSV exports."
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <a
             href={getExportCsvUrl('rent')}
             target="_blank"
@@ -102,7 +102,7 @@ const ReportsPage = () => {
       </PageHeader>
 
       {/* Period Filter Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-soft-sm flex items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-soft-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
           Reporting Period:
         </div>
@@ -110,7 +110,7 @@ const ReportsPage = () => {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 flex-1 sm:flex-none"
           >
             <option value={2026}>Year 2026</option>
             <option value={2025}>Year 2025</option>
@@ -118,7 +118,7 @@ const ReportsPage = () => {
           <select
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 flex-1 sm:flex-none"
           >
             <option value="">Whole Year</option>
             <option value="1">January</option>
@@ -142,7 +142,7 @@ const ReportsPage = () => {
       ) : (
         <div className="space-y-6">
           {/* Key Financial Totals */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatCard
               title="Rent Collections"
               value={formatCurrency(summary?.totalRentCollected)}

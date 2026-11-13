@@ -338,11 +338,11 @@ const TenantsPage = () => {
         maxWidth="max-w-2xl"
       >
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100 overflow-x-auto text-xs font-bold">
+        <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100 overflow-x-auto whitespace-nowrap text-xs font-bold no-scrollbar">
           <button
             type="button"
             onClick={() => setFormTab('personal')}
-            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
               formTab === 'personal'
                 ? 'bg-slate-900 text-white shadow-soft-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -353,7 +353,7 @@ const TenantsPage = () => {
           <button
             type="button"
             onClick={() => setFormTab('family')}
-            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
               formTab === 'family'
                 ? 'bg-slate-900 text-white shadow-soft-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -364,7 +364,7 @@ const TenantsPage = () => {
           <button
             type="button"
             onClick={() => setFormTab('identity')}
-            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
               formTab === 'identity'
                 ? 'bg-slate-900 text-white shadow-soft-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -375,7 +375,7 @@ const TenantsPage = () => {
           <button
             type="button"
             onClick={() => setFormTab('room')}
-            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
               formTab === 'room'
                 ? 'bg-slate-900 text-white shadow-soft-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -389,7 +389,7 @@ const TenantsPage = () => {
           {/* Tab 1: Personal Details */}
           {formTab === 'personal' && (
             <div className="space-y-4 animate-in fade-in">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Input
                   label="Full Name"
                   required
@@ -406,7 +406,7 @@ const TenantsPage = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <Select
                   label="Gender"
                   value={formData.gender}
@@ -438,7 +438,7 @@ const TenantsPage = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Input
                   label="Occupation"
                   placeholder="e.g. Software Engineer / Accountant"
@@ -474,7 +474,7 @@ const TenantsPage = () => {
                 Emergency contact details are critical for house safety and urgent notifications.
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Input
                   label="Emergency Contact Name"
                   required
@@ -496,7 +496,7 @@ const TenantsPage = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Input
                   label="Relationship to Tenant"
                   placeholder="Father / Mother / Brother"
@@ -524,7 +524,7 @@ const TenantsPage = () => {
                 Identity numbers will be safely stored and masked in the UI. Physical copies can be uploaded in the Documents module.
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Input
                   label="Aadhaar Card Number"
                   placeholder="12-digit Aadhaar number"
@@ -566,7 +566,7 @@ const TenantsPage = () => {
                 ))}
               </Select>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Input
                   label="Agreed Monthly Rent (INR)"
                   type="text"
@@ -597,7 +597,7 @@ const TenantsPage = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Input
                   label="Move-in Date"
                   type="date"
@@ -681,7 +681,7 @@ const TenantsPage = () => {
               }
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <Select
                 label="Security Deposit Settlement"
                 value={vacateData.depositRefundStatus}
@@ -711,7 +711,7 @@ const TenantsPage = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <Input
                 label="Deduction Amount (if any)"
                 type="text"

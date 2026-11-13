@@ -17,7 +17,7 @@ const SearchFilterBar = ({
 
   return (
     <div
-      className={`bg-white rounded-2xl border border-slate-200/80 p-4 shadow-soft-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3 ${className}`}
+      className={`bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-4 shadow-soft-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3 ${className}`}
     >
       <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-3">
         {/* Search Input Box */}
@@ -47,7 +47,7 @@ const SearchFilterBar = ({
         {filters.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             {filters.map((filter) => (
-              <div key={filter.id || filter.label} className="relative min-w-[130px]">
+              <div key={filter.id || filter.label} className="relative min-w-[130px] flex-1 sm:flex-none">
                 <select
                   value={filter.value}
                   onChange={(e) => filter.onChange(e.target.value)}

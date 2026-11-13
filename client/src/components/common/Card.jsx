@@ -7,8 +7,8 @@ const Card = ({
   actions,
   children,
   className = '',
-  bodyClassName = 'p-6',
-  headerClassName = 'p-6 pb-4 border-b border-slate-100',
+  bodyClassName = 'p-4 sm:p-6',
+  headerClassName = 'p-4 sm:p-6 pb-3.5 sm:pb-4 border-b border-slate-100',
   footer,
 }) => {
   return (
@@ -19,7 +19,7 @@ const Card = ({
         <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${headerClassName}`}>
           <div className="flex items-center gap-3">
             {Icon && (
-              <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700 shrink-0">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-slate-100 text-slate-700 shrink-0">
                 <Icon className="w-4 h-4" />
               </div>
             )}
@@ -41,7 +41,7 @@ const Card = ({
       )}
       <div className={bodyClassName}>{children}</div>
       {footer && (
-        <div className="px-6 py-4 bg-slate-50/70 border-t border-slate-100 rounded-b-2xl">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-slate-50/70 border-t border-slate-100 rounded-b-2xl">
           {footer}
         </div>
       )}

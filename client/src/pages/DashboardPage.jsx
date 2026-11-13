@@ -81,29 +81,30 @@ const DashboardPage = () => {
   return (
     <div className="space-y-7 animate-in fade-in duration-150">
       {/* Executive House Banner - Warm Charcoal & Orange */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] text-white p-6 sm:p-8 shadow-xl border border-slate-800">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] text-white p-5 sm:p-8 shadow-xl border border-slate-800">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-500/15 via-transparent to-transparent pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-5">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-orange-200 text-xs font-semibold backdrop-blur-md mb-2.5 border border-white/10">
-              <Building2 className="w-3.5 h-3.5 text-orange-400" />
-              <span>{user?.houseName || 'Residential Property'}</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-white/10 text-orange-200 text-xs font-semibold backdrop-blur-md mb-2 border border-white/10">
+              <Building2 className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+              <span className="truncate max-w-[200px] sm:max-w-none">{user?.houseName || 'Residential Property'}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h1 className="text-xl sm:text-3xl font-black tracking-tight text-white">
               Welcome, {user?.name || 'Property Owner'}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1.5 max-w-xl font-normal leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl font-normal leading-relaxed">
               Property dashboard for {formatMonth(data?.currentMonth)}. Manage individual rooms, collect monthly rent, and track sub-meter utility bills.
             </p>
           </div>
 
           {/* Quick Actions */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0 pt-1 sm:pt-0">
             <Button
               variant="brand"
               size="sm"
               icon={Plus}
+              className="justify-center text-center px-1.5 sm:px-3 text-[11px] sm:text-xs font-bold"
               onClick={() => navigate('/tenants?new=true')}
             >
               Add Tenant
@@ -112,6 +113,7 @@ const DashboardPage = () => {
               variant="secondary"
               size="sm"
               icon={Receipt}
+              className="justify-center text-center px-1.5 sm:px-3 text-[11px] sm:text-xs font-bold"
               onClick={() => navigate('/rent')}
             >
               Collect Rent
@@ -120,6 +122,7 @@ const DashboardPage = () => {
               variant="secondary"
               size="sm"
               icon={Zap}
+              className="justify-center text-center px-1.5 sm:px-3 text-[11px] sm:text-xs font-bold"
               onClick={() => navigate('/electricity?new=true')}
             >
               Record Meter
@@ -179,7 +182,7 @@ const DashboardPage = () => {
         <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">
           House Overview & Financial Summary
         </h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             title="Total Rooms"
             value={summary?.totalRooms || 0}

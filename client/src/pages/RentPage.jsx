@@ -194,10 +194,10 @@ const RentPage = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 overflow-x-auto whitespace-nowrap no-scrollbar">
         <button
           onClick={() => setActiveTab('invoices')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
             activeTab === 'invoices'
               ? 'bg-slate-900 text-white shadow-soft-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -208,7 +208,7 @@ const RentPage = () => {
         </button>
         <button
           onClick={() => setActiveTab('payments')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
             activeTab === 'payments'
               ? 'bg-slate-900 text-white shadow-soft-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -441,7 +441,7 @@ const RentPage = () => {
               placeholder="Enter amount"
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Payment Date"
                 type="date"

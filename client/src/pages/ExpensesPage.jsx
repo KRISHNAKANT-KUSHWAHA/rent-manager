@@ -290,7 +290,7 @@ const ExpensesPage = () => {
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select
               label="Expense Category"
               value={formData.category}
@@ -314,7 +314,7 @@ const ExpensesPage = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Expense Date"
               type="date"
@@ -336,7 +336,7 @@ const ExpensesPage = () => {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Paid To (Vendor/Contractor)"
               placeholder="e.g. Ramesh Plumber"

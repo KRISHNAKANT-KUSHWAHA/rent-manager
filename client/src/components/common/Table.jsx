@@ -18,10 +18,10 @@ const Table = ({
     <div
       className={`bg-white rounded-2xl border border-slate-200/80 shadow-soft-sm overflow-hidden ${className}`}
     >
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
         <table className={`w-full text-left border-collapse ${tableClassName}`}>
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
+            <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none whitespace-nowrap">
               {headers.map((header, idx) => {
                 const isObj = typeof header === 'object' && header !== null;
                 const label = isObj ? header.label : header;
@@ -32,7 +32,7 @@ const Table = ({
                   <th
                     key={idx}
                     style={width ? { width } : undefined}
-                    className={`py-3.5 px-4 sm:px-5 ${
+                    className={`py-3 px-3 sm:py-3.5 sm:px-5 ${
                       align === 'right'
                         ? 'text-right'
                         : align === 'center'

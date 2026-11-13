@@ -121,7 +121,7 @@ const LedgerPage = () => {
           <select
             value={yearFilter}
             onChange={(e) => setYearFilter(Number(e.target.value))}
-            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 flex-1 md:flex-none"
           >
             <option value={2026}>Year 2026</option>
             <option value={2025}>Year 2025</option>
@@ -130,7 +130,7 @@ const LedgerPage = () => {
           <select
             value={monthFilter}
             onChange={(e) => setMonthFilter(e.target.value)}
-            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 flex-1 md:flex-none"
           >
             <option value="">All Months</option>
             <option value="01">January</option>
@@ -191,7 +191,7 @@ const LedgerPage = () => {
           </div>
 
           {/* Ledger Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <StatCard
               title="Deposit Held"
               value={formatCurrency(summary?.totalSecurityDepositHeld)}

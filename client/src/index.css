@@ -89,3 +89,17 @@ input[type="number"] {
   appearance: textfield !important;
 }
 
+/* Mobile swipeable element scrollbar concealment */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth touch scrolling */
+.touch-pan-x {
+  -webkit-overflow-scrolling: touch;
+}
+

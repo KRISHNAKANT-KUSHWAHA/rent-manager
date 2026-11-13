@@ -383,103 +383,107 @@ const LoginPage = () => {
                       {setupData.initialRooms.map((room, idx) => (
                         <div
                           key={idx}
-                          className="p-3 rounded-2xl border border-slate-200 bg-slate-50/50 flex items-center gap-2 text-xs"
+                          className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:gap-2 text-xs"
                         >
-                          <div className="w-24">
-                            <label className="text-[10px] text-slate-400 font-bold block">
-                              Room No.
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                              value={room.roomNumber}
-                              onChange={(e) =>
-                                updateRoomRow(idx, 'roomNumber', e.target.value)
-                              }
-                            />
+                          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 flex-1">
+                            <div className="w-full sm:w-24">
+                              <label className="text-[10px] text-slate-400 font-bold block mb-0.5">
+                                Room No.
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                value={room.roomNumber}
+                                onChange={(e) =>
+                                  updateRoomRow(idx, 'roomNumber', e.target.value)
+                                }
+                              />
+                            </div>
+
+                            <div className="w-full sm:w-24">
+                              <label className="text-[10px] text-slate-400 font-bold block mb-0.5">
+                                Floor (0,1..)
+                              </label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                placeholder="0"
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                value={room.floor ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9]/g, '');
+                                  updateRoomRow(idx, 'floor', val);
+                                }}
+                              />
+                            </div>
+
+                            <div className="w-full sm:flex-1">
+                              <label className="text-[10px] text-slate-400 font-bold block mb-0.5">
+                                Rent (₹)
+                              </label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                required
+                                placeholder="e.g. 7500"
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                value={room.monthlyRent ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9]/g, '');
+                                  updateRoomRow(idx, 'monthlyRent', val);
+                                }}
+                              />
+                            </div>
+
+                            <div className="w-full sm:flex-1">
+                              <label className="text-[10px] text-slate-400 font-bold block mb-0.5">
+                                Deposit (₹)
+                              </label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                placeholder="0"
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                value={room.securityDeposit ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9]/g, '');
+                                  updateRoomRow(idx, 'securityDeposit', val);
+                                }}
+                              />
+                            </div>
                           </div>
 
-                          <div className="w-24">
-                            <label className="text-[10px] text-slate-400 font-bold block">
-                              Floor (0,1..)
-                            </label>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              placeholder="0"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                              value={room.floor ?? ''}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                updateRoomRow(idx, 'floor', val);
-                              }}
-                            />
-                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 sm:w-24">
+                              <label className="text-[10px] text-slate-400 font-bold block mb-0.5">
+                                Sub-Meter
+                              </label>
+                              <input
+                                type="text"
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 uppercase text-amber-700 font-bold"
+                                value={room.electricityMeterNumber}
+                                onChange={(e) =>
+                                  updateRoomRow(
+                                    idx,
+                                    'electricityMeterNumber',
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </div>
 
-                          <div className="flex-1">
-                            <label className="text-[10px] text-slate-400 font-bold block">
-                              Rent (₹)
-                            </label>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              required
-                              placeholder="e.g. 7500"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                              value={room.monthlyRent ?? ''}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                updateRoomRow(idx, 'monthlyRent', val);
-                              }}
-                            />
+                            <button
+                              type="button"
+                              onClick={() => removeRoomRow(idx)}
+                              className="p-1.5 text-slate-400 hover:text-rose-500 rounded transition mt-3 sm:mt-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-
-                          <div className="flex-1">
-                            <label className="text-[10px] text-slate-400 font-bold block">
-                              Deposit (₹)
-                            </label>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              placeholder="0"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                              value={room.securityDeposit ?? ''}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                updateRoomRow(idx, 'securityDeposit', val);
-                              }}
-                            />
-                          </div>
-
-                          <div className="w-24">
-                            <label className="text-[10px] text-slate-400 font-bold block">
-                              Sub-Meter
-                            </label>
-                            <input
-                              type="text"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 uppercase text-amber-700 font-bold"
-                              value={room.electricityMeterNumber}
-                              onChange={(e) =>
-                                updateRoomRow(
-                                  idx,
-                                  'electricityMeterNumber',
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => removeRoomRow(idx)}
-                            className="p-1 text-slate-400 hover:text-rose-500 rounded transition mt-3"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       ))}
                     </div>
