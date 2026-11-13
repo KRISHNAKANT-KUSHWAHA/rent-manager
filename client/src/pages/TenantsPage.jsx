@@ -1,0 +1,736 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { getTenants, createTenant, vacateTenant, deleteTenant } from '../api/tenantApi';
+import { getRooms } from '../api/roomApi';
+import { useToast } from '../context/ToastContext';
+import { formatDate, maskAadhaar, formatCurrency } from '../utils/formatters';
+import PageHeader from '../components/layout/PageHeader';
+import Button from '../components/common/Button';
+import Input from '../components/common/Input';
+import Select from '../components/common/Select';
+import Badge from '../components/common/Badge';
+import Modal from '../components/common/Modal';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import EmptyState from '../components/common/EmptyState';
+import Skeleton from '../components/common/Skeleton';
+import {
+  Users,
+  Plus,
+  Search,
+  User,
+  Phone,
+  Home,
+  FileText,
+  DoorOpen,
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+  Eye,
+  LogOut,
+  Trash2,
+} from 'lucide-react';
+
+const TenantsPage = () => {
+  const [tenants, setTenants] = useState([]);
+  const [availableRooms, setAvailableRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  // Modals
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isVacateOpen, setIsVacateOpen] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Tenant registration form state
+  const initialFormState = {
+    fullName: '',
+    fatherName: '',
+    husbandName: '',
+    gender: 'Male',
+    occupation: '',
+    employerOrCollege: '',
+    permanentAddress: '',
+    currentAddress: '',
+    primaryMobile: '',
+    alternateMobile: '',
+    email: '',
+    emergencyContactName: '',
+    emergencyContactNumber: '',
+    emergencyContactRelation: 'Parent',
+    aadhaarNumber: '',
+    voterId: '',
+    panNumber: '',
+    assignedRoomId: '',
+    monthlyRent: '',
+    securityDeposit: '',
+    rentDueDay: 5,
+    moveInDate: new Date().toISOString().slice(0, 10),
+  };
+  const [formData, setFormData] = useState(initialFormState);
+  const [formTab, setFormTab] = useState('personal'); // 'personal' | 'family' | 'identity' | 'room'
+
+  // Vacate Form state
+  const [vacateData, setVacateData] = useState({
+    vacatingDate: new Date().toISOString().slice(0, 10),
+    depositRefundStatus: 'Refunded',
+    refundAmount: '',
+    deductionAmount: 0,
+    deductionReason: '',
+    notes: '',
+  });
+
+  const fetchTenants = async () => {
+    try {
+      setLoading(true);
+      const res = await getTenants({ search, status: statusFilter });
+      if (res.success) {
+        setTenants(res.tenants);
+      }
+    } catch (err) {
+      toast.error('Failed to load tenants list');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAvailableRooms = async () => {
+    try {
+      const res = await getRooms({ status: 'Available' });
+      if (res.success) {
+        setAvailableRooms(res.rooms);
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    fetchTenants();
+    fetchAvailableRooms();
+    if (searchParams.get('new') === 'true') {
+      setIsFormOpen(true);
+    }
+  }, [statusFilter]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    fetchTenants();
+  };
+
+  const handleRoomSelect = (roomId) => {
+    setFormData((prev) => {
+      const selected = availableRooms.find((r) => r._id === roomId);
+      return {
+        ...prev,
+        assignedRoomId: roomId,
+        monthlyRent: selected ? selected.monthlyRent : prev.monthlyRent,
+        securityDeposit: selected ? selected.securityDeposit : prev.securityDeposit,
+      };
+    });
+  };
+
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const res = await createTenant(formData);
+      toast.success(res.message || 'Tenant registered successfully');
+      setIsFormOpen(false);
+      setFormData(initialFormState);
+      fetchTenants();
+      fetchAvailableRooms();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error registering tenant');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleVacateSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedTenant) return;
+    setSubmitting(true);
+    try {
+      const res = await vacateTenant(selectedTenant._id, vacateData);
+      toast.success(res.message || 'Tenant marked as vacated');
+      setIsVacateOpen(false);
+      fetchTenants();
+      fetchAvailableRooms();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error processing move-out');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Tenant Management"
+        subtitle="Maintain tenant profiles, family & emergency contacts, identity documents, and tenancy records."
+      >
+        <Button
+          variant="primary"
+          icon={Plus}
+          onClick={() => {
+            setFormData(initialFormState);
+            setIsFormOpen(true);
+          }}
+        >
+          Register New Tenant
+        </Button>
+      </PageHeader>
+
+      {/* Filter and Search */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-80">
+          <Input
+            placeholder="Search tenant name, phone, occupation..."
+            icon={Search}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </form>
+
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="w-48">
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              options={[
+                { value: 'all', label: 'All Tenants' },
+                { value: 'Active', label: 'Active Tenancies' },
+                { value: 'Vacated', label: 'Past Vacated Tenants' },
+              ]}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Tenants Table */}
+      {loading ? (
+        <Skeleton className="h-64" count={3} />
+      ) : tenants.length === 0 ? (
+        <EmptyState
+          title="No tenants found"
+          description="Register a new tenant to assign them to an available room."
+          actionLabel="Register Tenant"
+          onAction={() => setIsFormOpen(true)}
+        />
+      ) : (
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
+                <tr>
+                  <th className="py-4 px-6">Tenant Name</th>
+                  <th className="py-4 px-6">Assigned Room</th>
+                  <th className="py-4 px-6">Phone Number</th>
+                  <th className="py-4 px-6">Masked Aadhaar / ID</th>
+                  <th className="py-4 px-6">Move-in Date</th>
+                  <th className="py-4 px-6">Status</th>
+                  <th className="py-4 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {tenants.map((tenant) => (
+                  <tr key={tenant._id} className="hover:bg-slate-50/50 transition">
+                    <td className="py-4 px-6">
+                      <div className="font-bold text-slate-900 text-sm">
+                        {tenant.fullName}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">
+                        Father: {tenant.fatherName} • {tenant.occupation || 'Resident'}
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-6">
+                      {tenant.currentRoom ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold">
+                          <Home className="w-3.5 h-3.5" />
+                          <span>{tenant.currentRoom.roomNumber}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-medium">None (Vacated)</span>
+                      )}
+                    </td>
+
+                    <td className="py-4 px-6 font-semibold text-slate-700">
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{tenant.primaryMobile}</span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-6 font-mono text-slate-600">
+                      {tenant.maskedAadhaar || maskAadhaar(tenant.aadhaarNumber)}
+                    </td>
+
+                    <td className="py-4 px-6 text-slate-600">
+                      {formatDate(tenant.moveInDate)}
+                    </td>
+
+                    <td className="py-4 px-6">
+                      <Badge status={tenant.status} />
+                    </td>
+
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          size="xs"
+                          variant="secondary"
+                          icon={Eye}
+                          onClick={() => navigate(`/tenants/${tenant._id}`)}
+                        >
+                          Profile
+                        </Button>
+
+                        {tenant.status === 'Active' && (
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            icon={LogOut}
+                            title="Vacate room"
+                            onClick={() => {
+                              setSelectedTenant(tenant);
+                              setVacateData({
+                                vacatingDate: new Date().toISOString().slice(0, 10),
+                                depositRefundStatus: 'Refunded',
+                                refundAmount: tenant.currentRoom?.monthlyRent
+                                  ? tenant.currentRoom.monthlyRent * 2
+                                  : '',
+                                deductionAmount: 0,
+                                deductionReason: '',
+                                notes: '',
+                              });
+                              setIsVacateOpen(true);
+                            }}
+                          >
+                            Vacate
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Comprehensive Multi-Tab Register Tenant Modal */}
+      <Modal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        title="Register New Tenant"
+        subtitle="Complete tenant personal details, emergency contact, identity proof, and room tenancy."
+        maxWidth="max-w-2xl"
+      >
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100 overflow-x-auto text-xs font-bold">
+          <button
+            type="button"
+            onClick={() => setFormTab('personal')}
+            className={`px-3 py-1.5 rounded-xl transition ${
+              formTab === 'personal'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            1. Personal Info
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormTab('family')}
+            className={`px-3 py-1.5 rounded-xl transition ${
+              formTab === 'family'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            2. Family & Emergency
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormTab('identity')}
+            className={`px-3 py-1.5 rounded-xl transition ${
+              formTab === 'identity'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            3. Identity Proofs
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormTab('room')}
+            className={`px-3 py-1.5 rounded-xl transition ${
+              formTab === 'room'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            4. Room & Rent Setup
+          </button>
+        </div>
+
+        <form onSubmit={handleCreateSubmit} className="space-y-4">
+          {/* Tab 1: Personal Details */}
+          {formTab === 'personal' && (
+            <div className="space-y-4 animate-in fade-in">
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Full Name"
+                  required
+                  placeholder="e.g. Vikram Malhotra"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                />
+                <Input
+                  label="Father's Name"
+                  required
+                  placeholder="e.g. Rajesh Malhotra"
+                  value={formData.fatherName}
+                  onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <Select
+                  label="Gender"
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  options={[
+                    { value: 'Male', label: 'Male' },
+                    { value: 'Female', label: 'Female' },
+                    { value: 'Other', label: 'Other' },
+                  ]}
+                />
+                <Input
+                  label="Primary Mobile No."
+                  required
+                  type="tel"
+                  placeholder="9876543210"
+                  value={formData.primaryMobile}
+                  onChange={(e) =>
+                    setFormData({ ...formData, primaryMobile: e.target.value })
+                  }
+                />
+                <Input
+                  label="Alternate Mobile No."
+                  type="tel"
+                  placeholder="Optional"
+                  value={formData.alternateMobile}
+                  onChange={(e) =>
+                    setFormData({ ...formData, alternateMobile: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Occupation"
+                  placeholder="e.g. Software Engineer / Accountant"
+                  value={formData.occupation}
+                  onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                />
+                <Input
+                  label="Company / College"
+                  placeholder="e.g. Infosys Ltd"
+                  value={formData.employerOrCollege}
+                  onChange={(e) =>
+                    setFormData({ ...formData, employerOrCollege: e.target.value })
+                  }
+                />
+              </div>
+
+              <Input
+                label="Permanent Address"
+                required
+                placeholder="Full permanent residential address (Village/City, State, Pincode)"
+                value={formData.permanentAddress}
+                onChange={(e) =>
+                  setFormData({ ...formData, permanentAddress: e.target.value })
+                }
+              />
+            </div>
+          )}
+
+          {/* Tab 2: Family & Emergency */}
+          {formTab === 'family' && (
+            <div className="space-y-4 animate-in fade-in">
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed">
+                Emergency contact details are critical for house safety and urgent notifications.
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Emergency Contact Name"
+                  required
+                  placeholder="Parent or Guardian Name"
+                  value={formData.emergencyContactName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, emergencyContactName: e.target.value })
+                  }
+                />
+                <Input
+                  label="Emergency Contact Phone"
+                  required
+                  type="tel"
+                  placeholder="9829011223"
+                  value={formData.emergencyContactNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, emergencyContactNumber: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Relationship to Tenant"
+                  placeholder="Father / Mother / Brother"
+                  value={formData.emergencyContactRelation}
+                  onChange={(e) =>
+                    setFormData({ ...formData, emergencyContactRelation: e.target.value })
+                  }
+                />
+                <Input
+                  label="Husband's Name (if applicable)"
+                  placeholder="Optional"
+                  value={formData.husbandName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, husbandName: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Tab 3: Identity Details */}
+          {formTab === 'identity' && (
+            <div className="space-y-4 animate-in fade-in">
+              <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 leading-relaxed">
+                Identity numbers will be safely stored and masked in the UI. Physical copies can be uploaded in the Documents module.
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Aadhaar Card Number"
+                  placeholder="12-digit Aadhaar number"
+                  value={formData.aadhaarNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, aadhaarNumber: e.target.value })
+                  }
+                />
+                <Input
+                  label="Voter ID Card Number"
+                  placeholder="e.g. RJ/04/123/456789"
+                  value={formData.voterId}
+                  onChange={(e) => setFormData({ ...formData, voterId: e.target.value })}
+                />
+              </div>
+
+              <Input
+                label="PAN Card Number"
+                placeholder="e.g. ABCDE1234F"
+                value={formData.panNumber}
+                onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+              />
+            </div>
+          )}
+
+          {/* Tab 4: Room & Tenancy Setup */}
+          {formTab === 'room' && (
+            <div className="space-y-4 animate-in fade-in">
+              <Select
+                label="Assign Room"
+                value={formData.assignedRoomId}
+                onChange={(e) => handleRoomSelect(e.target.value)}
+              >
+                <option value="">-- Select an Available Room --</option>
+                {availableRooms.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.roomNumber} ({r.floorName || `Floor ${r.floor}`}) - ₹{r.monthlyRent}
+                    /mo
+                  </option>
+                ))}
+              </Select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Agreed Monthly Rent (INR)"
+                  type="number"
+                  placeholder="8500"
+                  value={formData.monthlyRent}
+                  onChange={(e) =>
+                    setFormData({ ...formData, monthlyRent: e.target.value })
+                  }
+                />
+                <Input
+                  label="Security Deposit (INR)"
+                  type="number"
+                  placeholder="17000"
+                  value={formData.securityDeposit}
+                  onChange={(e) =>
+                    setFormData({ ...formData, securityDeposit: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Move-in Date"
+                  type="date"
+                  value={formData.moveInDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, moveInDate: e.target.value })
+                  }
+                />
+                <Input
+                  label="Monthly Rent Due Day"
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={formData.rentDueDay}
+                  onChange={(e) =>
+                    setFormData({ ...formData, rentDueDay: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Footer Controls */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsFormOpen(false)}
+            >
+              Cancel
+            </Button>
+
+            <div className="flex items-center gap-2">
+              {formTab !== 'room' ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => {
+                    if (formTab === 'personal') setFormTab('family');
+                    else if (formTab === 'family') setFormTab('identity');
+                    else if (formTab === 'identity') setFormTab('room');
+                  }}
+                >
+                  Next Step
+                </Button>
+              ) : (
+                <Button type="submit" variant="primary" loading={submitting}>
+                  Complete Registration
+                </Button>
+              )}
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Vacate Tenant Modal */}
+      {selectedTenant && (
+        <Modal
+          isOpen={isVacateOpen}
+          onClose={() => setIsVacateOpen(false)}
+          title={`Vacate Tenant: ${selectedTenant.fullName}`}
+          subtitle={`Room ${selectedTenant.currentRoom?.roomNumber || 'Room'} will become Available.`}
+          maxWidth="max-w-lg"
+        >
+          <form onSubmit={handleVacateSubmit} className="space-y-4">
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 leading-relaxed">
+              <strong>Notice:</strong> Vacating marks the tenancy as terminated and releases the room. All rent invoices, payments, and electricity history will be permanently preserved in the ledger.
+            </div>
+
+            <Input
+              label="Vacating Date"
+              type="date"
+              required
+              value={vacateData.vacatingDate}
+              onChange={(e) =>
+                setVacateData({ ...vacateData, vacatingDate: e.target.value })
+              }
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Security Deposit Status"
+                value={vacateData.depositRefundStatus}
+                onChange={(e) =>
+                  setVacateData({ ...vacateData, depositRefundStatus: e.target.value })
+                }
+                options={[
+                  { value: 'Refunded', label: 'Refunded in Full' },
+                  { value: 'Partially Refunded', label: 'Partially Refunded (Deductions)' },
+                  { value: 'Forfeited', label: 'Forfeited' },
+                  { value: 'Pending', label: 'Settlement Pending' },
+                ]}
+              />
+              <Input
+                label="Refund Amount (INR)"
+                type="number"
+                placeholder="17000"
+                value={vacateData.refundAmount}
+                onChange={(e) =>
+                  setVacateData({ ...vacateData, refundAmount: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Deduction Amount (if any)"
+                type="number"
+                placeholder="0"
+                value={vacateData.deductionAmount}
+                onChange={(e) =>
+                  setVacateData({ ...vacateData, deductionAmount: e.target.value })
+                }
+              />
+              <Input
+                label="Reason for Deductions"
+                placeholder="e.g. Paint touchup / broken switch"
+                value={vacateData.deductionReason}
+                onChange={(e) =>
+                  setVacateData({ ...vacateData, deductionReason: e.target.value })
+                }
+              />
+            </div>
+
+            <Input
+              label="Vacating Remarks & Notes"
+              placeholder="e.g. Cleared all dues, keys returned"
+              value={vacateData.notes}
+              onChange={(e) => setVacateData({ ...vacateData, notes: e.target.value })}
+            />
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+              <Button variant="secondary" onClick={() => setIsVacateOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="danger" loading={submitting}>
+                Confirm Vacate & Settle
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
+export default TenantsPage;
+

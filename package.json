@@ -1,0 +1,16 @@
+{
+  "name": "room-rental-management-system",
+  "version": "1.0.0",
+  "description": "Owner-Only Room Rental Management System for a Single Residential House",
+  "scripts": {
+    "server": "npm --prefix server start",
+    "client": "npm --prefix client dev",
+    "seed": "npm --prefix server run seed",
+    "clear": "npm --prefix server run clear",
+    "build:client": "npm --prefix client run build"
+  },
+  "keywords": ["rent-management", "mern", "owner-only", "room-rental"],
+  "author": "Antigravity Senior Full-Stack MERN Architect",
+  "license": "ISC"
+}
+
