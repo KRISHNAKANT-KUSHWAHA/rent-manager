@@ -263,6 +263,7 @@ const TenantsPage = () => {
         voterId: editFormData.voterId,
         panNumber: editFormData.panNumber,
         assignedRoomId: editFormData.assignedRoomId,
+        moveInDate: editFormData.moveInDate,
         monthlyRent: Number(editFormData.monthlyRent) || 0,
         securityDeposit: Number(editFormData.securityDeposit) || 0,
         rentDueDay: Number(editFormData.rentDueDay) || 5,
@@ -1200,15 +1201,23 @@ const TenantsPage = () => {
                     onChange={(e) => setEditFormData({ ...editFormData, securityDeposit: e.target.value.replace(/[^0-9]/g, '') })}
                   />
                 </div>
-                <Input
-                  label="Rent Due Day (1–31)"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="5"
-                  value={editFormData.rentDueDay}
-                  onChange={(e) => setEditFormData({ ...editFormData, rentDueDay: e.target.value.replace(/[^0-9]/g, '') })}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <Input
+                    label="Move-in Date"
+                    type="date"
+                    value={editFormData.moveInDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, moveInDate: e.target.value })}
+                  />
+                  <Input
+                    label="Monthly Rent Due Day (1-31)"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="5"
+                    value={editFormData.rentDueDay}
+                    onChange={(e) => setEditFormData({ ...editFormData, rentDueDay: e.target.value.replace(/[^0-9]/g, '') })}
+                  />
+                </div>
               </div>
             )}
 

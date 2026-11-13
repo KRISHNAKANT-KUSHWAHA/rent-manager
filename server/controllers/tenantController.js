@@ -341,8 +341,8 @@ const updateTenant = async (req, res) => {
         tenant.currentRoom = null;
       }
     } else {
-      // Room remained unchanged. Update agreement rent/deposit/due day if specified
-      if (currentRoomIdStr && (monthlyRent !== undefined || securityDeposit !== undefined || rentDueDay !== undefined)) {
+      // Room remained unchanged. Update agreement rent/deposit/due day/startDate if specified
+      if (currentRoomIdStr && (monthlyRent !== undefined || securityDeposit !== undefined || rentDueDay !== undefined || otherUpdates.moveInDate !== undefined)) {
         const activeAgreement = await RentalAgreement.findOne({
           tenant: tenant._id,
           status: 'Active',
@@ -351,9 +351,14 @@ const updateTenant = async (req, res) => {
           if (monthlyRent !== undefined && monthlyRent !== '') activeAgreement.monthlyRent = Number(monthlyRent);
           if (securityDeposit !== undefined && securityDeposit !== '') activeAgreement.securityDeposit = Number(securityDeposit);
           if (rentDueDay !== undefined && rentDueDay !== '') activeAgreement.rentDueDay = Number(rentDueDay);
+          if (otherUpdates.moveInDate) activeAgreement.startDate = new Date(otherUpdates.moveInDate);
           await activeAgreement.save();
         }
       }
+    }
+
+    if (otherUpdates.moveInDate) {
+      tenant.moveInDate = new Date(otherUpdates.moveInDate);
     }
 
     delete otherUpdates.currentRoom;
