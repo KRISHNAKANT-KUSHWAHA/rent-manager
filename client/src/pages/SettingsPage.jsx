@@ -243,7 +243,7 @@ const SettingsPage = () => {
                     Purge All Dummy Tenancy Records
                   </h4>
                   <p className="text-slate-500 mt-0.5">
-                    Deletes all tenants, agreements, rent invoices, payments, meter readings, and expenses. Keeps your rooms and owner profile intact with all rooms marked Available.
+                    Deletes all tenants, agreements, rent invoices, payments, and electricity meter readings. Keeps your rooms and owner profile intact with all rooms marked Available.
                   </p>
                 </div>
                 <Button
@@ -353,7 +353,7 @@ const SettingsPage = () => {
         onClose={() => setIsResetTenanciesOpen(false)}
         onConfirm={handleResetTenancies}
         title="Purge All Dummy Tenancy Data?"
-        message="This will permanently delete all tenants, agreements, invoices, rent payments, meter readings, bills, and expenses. Your room configurations and owner account will be preserved."
+        message="This will permanently delete all tenants, agreements, invoices, rent payments, and electricity meter readings. Your room configurations and owner account will be preserved."
         confirmText="Confirm Purge"
         confirmVariant="danger"
         loading={resetting}

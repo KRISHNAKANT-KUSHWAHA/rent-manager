@@ -15,7 +15,6 @@ import {
   Calendar,
   Receipt,
   Zap,
-  BadgePercent,
   Home,
   FileSpreadsheet,
   Printer,
@@ -29,13 +28,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  PieChart,
-  Pie,
-  Cell,
   Legend,
 } from 'recharts';
-
-const COLORS = ['#059669', '#0d9488', '#0284c7', '#d97706', '#64748b', '#8b5cf6'];
 
 const ReportsPage = () => {
   const [data, setData] = useState(null);
@@ -142,7 +136,7 @@ const ReportsPage = () => {
       ) : (
         <div className="space-y-6">
           {/* Key Financial Totals */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <StatCard
               title="Rent Collections"
               value={formatCurrency(summary?.totalRentCollected)}
@@ -158,118 +152,65 @@ const ReportsPage = () => {
               iconBg="bg-teal-50 text-teal-700"
             />
             <StatCard
-              title="Maintenance Expenses"
-              value={formatCurrency(summary?.totalExpenses)}
-              subtitle="Repairs, cleaning & upkeep"
-              icon={BadgePercent}
-              iconBg="bg-rose-50 text-rose-700"
-            />
-            <StatCard
-              title="Net Property Income"
-              value={formatCurrency(summary?.netProfit)}
-              subtitle="(Gross Income - Expenses)"
+              title="Total Revenue Collected"
+              value={formatCurrency(
+                (summary?.totalRentCollected || 0) + (summary?.totalElectricityCollected || 0)
+              )}
+              subtitle="(Rent + Electricity)"
               icon={TrendingUp}
-              iconBg="bg-orange-50 text-orange-600"
+              iconBg="bg-emerald-50 text-emerald-700"
               trendType="positive"
             />
           </div>
 
-          {/* Visual Charts: Room Revenue & Expense Breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Room Revenue Performance */}
-            <Card
-              title="Room-Wise Rental Collection"
-              subtitle="Total rent collected across each individual room in this house"
-            >
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={roomPerformance} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                    <XAxis type="number" tickFormatter={(val) => `₹${val / 1000}k`} stroke="#94a3b8" />
-                    <YAxis dataKey="roomNumber" type="category" stroke="#94a3b8" width={80} />
-                    <Tooltip
-                      formatter={(val) => formatCurrency(val)}
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderRadius: '12px',
-                        color: '#fff',
-                        fontSize: '12px',
-                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
-                      }}
-                    />
-                    <Bar dataKey="rentCollected" fill="#059669" radius={[0, 6, 6, 0]} maxBarSize={24} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-
-            {/* Expense Distribution Pie Chart */}
-            <Card
-              title="Expense Category Distribution"
-              subtitle="Breakdown of maintenance expenditure by type"
-            >
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={expenseBreakdown}
-                      dataKey="amount"
-                      nameKey="category"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={4}
-                    >
-                      {expenseBreakdown &&
-                        expenseBreakdown.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(val) => formatCurrency(val)}
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderRadius: '12px',
-                        color: '#fff',
-                        fontSize: '12px',
-                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      wrapperStyle={{ fontSize: '11px' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-          </div>
+          {/* Visual Charts: Room Revenue Performance */}
+          <Card
+            title="Room-Wise Rental Collection"
+            subtitle="Total rent collected across each individual room in this house"
+          >
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={roomPerformance} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" tickFormatter={(val) => `₹${val / 1000}k`} stroke="#94a3b8" />
+                  <YAxis dataKey="roomNumber" type="category" stroke="#94a3b8" width={80} />
+                  <Tooltip
+                    formatter={(val) => formatCurrency(val)}
+                    contentStyle={{
+                      backgroundColor: '#0f172a',
+                      borderRadius: '12px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
+                    }}
+                  />
+                  <Bar dataKey="rentCollected" fill="#ea580c" radius={[0, 6, 6, 0]} maxBarSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
 
           {/* Room Performance Detail Table */}
           <Card
             title="Detailed Room Accounting Breakdown"
-            subtitle="Financial performance and operational margin per room"
+            subtitle="Financial performance and total revenue per room"
             bodyClassName="p-0"
           >
             <Table
               headers={[
                 'Room Number',
                 'Floor Level',
-                'Rent Rate',
+                'Monthly Rent Rate',
                 'Rent Collected',
                 'Electricity Collected',
-                'Maintenance Cost',
-                { label: 'Net Revenue', align: 'right' },
+                { label: 'Total Revenue', align: 'right' },
               ]}
             >
               {roomPerformance &&
                 roomPerformance.map((room, idx) => {
                   const net =
                     (room.rentCollected || 0) +
-                    (room.electricityCollected || 0) -
-                    (room.expenseIncurred || 0);
+                    (room.electricityCollected || 0);
                   return (
                     <tr key={idx} className="hover:bg-slate-50/60 transition">
                       <td className="py-4 px-4 sm:px-5 font-bold text-slate-900 text-sm">
@@ -284,9 +225,6 @@ const ReportsPage = () => {
                       </td>
                       <td className="py-4 px-4 sm:px-5 font-bold text-teal-700 tabular-nums text-xs">
                         {formatCurrency(room.electricityCollected)}
-                      </td>
-                      <td className="py-4 px-4 sm:px-5 font-medium text-rose-600 tabular-nums text-xs">
-                        {formatCurrency(room.expenseIncurred)}
                       </td>
                       <td className="py-4 px-4 sm:px-5 text-right font-black text-slate-900 text-sm tabular-nums">
                         {formatCurrency(net)}

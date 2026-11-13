@@ -258,15 +258,15 @@ const DashboardPage = () => {
             subtitle="Under service"
             icon={AlertTriangle}
             iconBg="bg-slate-100 text-slate-700"
-            onClick={() => navigate('/expenses')}
+            onClick={() => navigate('/rooms')}
           />
         </div>
       </div>
 
       {/* Monthly Financial Chart */}
       <Card
-        title="Monthly Collection & Expense History"
-        subtitle="Rent collection, sub-meter electricity recovery, and property maintenance expenses"
+        title="Monthly Collection History"
+        subtitle="Rent collection and sub-meter electricity recovery"
         actions={
           <Link
             to="/reports"
@@ -294,11 +294,7 @@ const DashboardPage = () => {
               <Tooltip
                 formatter={(value, name) => [
                   formatCurrency(value),
-                  name === 'rent'
-                    ? 'Rent Collected'
-                    : name === 'electricity'
-                    ? 'Electricity'
-                    : 'Expenses',
+                  name === 'rent' ? 'Rent Collected' : 'Electricity',
                 ]}
                 contentStyle={{
                   backgroundColor: '#0f172a',
@@ -311,17 +307,10 @@ const DashboardPage = () => {
               />
               <Legend
                 wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                formatter={(value) =>
-                  value === 'rent'
-                    ? 'Rent'
-                    : value === 'electricity'
-                    ? 'Electricity'
-                    : 'Expenses'
-                }
+                formatter={(value) => (value === 'rent' ? 'Rent' : 'Electricity')}
               />
               <Bar dataKey="rent" fill="#ea580c" radius={[6, 6, 0, 0]} maxBarSize={32} />
               <Bar dataKey="electricity" fill="#f59e0b" radius={[6, 6, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="expenses" fill="#64748b" radius={[6, 6, 0, 0]} maxBarSize={32} />
             </BarChart>
           </ResponsiveContainer>
         </div>

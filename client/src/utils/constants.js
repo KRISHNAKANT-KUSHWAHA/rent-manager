@@ -12,18 +12,5 @@ export const DOCUMENT_TYPE_LABELS = {
   other: 'Other Document',
 };
 
-export const EXPENSE_CATEGORIES = [
-  'Plumbing',
-  'Electrical',
-  'Painting',
-  'Cleaning',
-  'Maintenance',
-  'Taxes',
-  'Pest Control',
-  'Security',
-  'Renovation',
-  'Other',
-];
-
 export const PAYMENT_METHODS = ['UPI', 'Cash', 'Bank Transfer', 'Other'];
 

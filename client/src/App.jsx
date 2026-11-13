@@ -18,7 +18,6 @@ import AgreementsPage from './pages/AgreementsPage';
 import RentPage from './pages/RentPage';
 import ElectricityPage from './pages/ElectricityPage';
 import LedgerPage from './pages/LedgerPage';
-import ExpensesPage from './pages/ExpensesPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -90,7 +89,6 @@ function App() {
               <Route path="rent" element={<RentPage />} />
               <Route path="electricity" element={<ElectricityPage />} />
               <Route path="ledger" element={<LedgerPage />} />
-              <Route path="expenses" element={<ExpensesPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>

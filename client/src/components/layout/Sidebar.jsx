@@ -10,7 +10,6 @@ import {
   Receipt,
   Zap,
   BookOpenText,
-  BadgePercent,
   BarChart3,
   Settings,
   LogOut,
@@ -29,7 +28,6 @@ const navItems = [
   { name: 'Rent Management', path: '/rent', icon: Receipt },
   { name: 'Electricity', path: '/electricity', icon: Zap },
   { name: 'Tenant Ledger', path: '/ledger', icon: BookOpenText },
-  { name: 'Expenses', path: '/expenses', icon: BadgePercent },
   { name: 'Reports', path: '/reports', icon: BarChart3 },
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
