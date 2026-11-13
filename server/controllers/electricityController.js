@@ -380,11 +380,292 @@ const downloadElectricityBillPDF = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Update electricity bill
+ * @route   PUT /api/electricity/bills/:id
+ * @access  Private (Owner)
+ */
+const updateBill = async (req, res) => {
+  try {
+    const bill = await ElectricityBill.findById(req.params.id);
+    if (!bill) {
+      return res.status(404).json({ success: false, message: 'Electricity bill not found' });
+    }
+
+    const {
+      currentReading,
+      previousReading,
+      ratePerUnit,
+      unitsConsumed,
+      dueDate,
+      notes,
+    } = req.body;
+
+    if (currentReading !== undefined) bill.currentReading = Number(currentReading);
+    if (previousReading !== undefined) bill.previousReading = Number(previousReading);
+    if (ratePerUnit !== undefined) bill.ratePerUnit = Number(ratePerUnit);
+
+    const calculatedUnits =
+      unitsConsumed !== undefined
+        ? Number(unitsConsumed)
+        : Math.max(0, bill.currentReading - bill.previousReading);
+
+    bill.unitsConsumed = calculatedUnits;
+    bill.billAmount = Math.round(calculatedUnits * bill.ratePerUnit);
+    bill.totalDue = bill.billAmount + (bill.previousBalance || 0);
+    bill.remainingBalance = Math.max(0, bill.totalDue - (bill.amountPaid || 0));
+
+    if (dueDate) bill.dueDate = new Date(dueDate);
+
+    if (bill.remainingBalance === 0) {
+      bill.status = 'Paid';
+    } else if (bill.amountPaid > 0) {
+      bill.status = 'Partially Paid';
+    } else {
+      bill.status = new Date() > new Date(bill.dueDate) ? 'Overdue' : 'Pending';
+    }
+
+    await bill.save();
+
+    // Also sync the associated reading if it exists
+    if (bill.reading) {
+      const reading = await ElectricityReading.findById(bill.reading);
+      if (reading) {
+        reading.currentReading = bill.currentReading;
+        reading.previousReading = bill.previousReading;
+        reading.unitsConsumed = bill.unitsConsumed;
+        reading.ratePerUnit = bill.ratePerUnit;
+        reading.calculatedAmount = bill.billAmount;
+        if (notes !== undefined) reading.notes = notes;
+        await reading.save();
+      }
+    }
+
+    // Sync meter reading
+    if (bill.room) {
+      const latestReading = await ElectricityReading.findOne({ room: bill.room }).sort({
+        billingMonth: -1,
+      });
+      if (latestReading) {
+        await ElectricityMeter.findOneAndUpdate(
+          { room: bill.room },
+          { currentReading: latestReading.currentReading }
+        );
+      }
+    }
+
+    await logAudit(
+      'UPDATE_ELECTRICITY_BILL',
+      'ELECTRICITY',
+      {
+        billNumber: bill.billNumber,
+        totalDue: bill.totalDue,
+        unitsConsumed: bill.unitsConsumed,
+      },
+      req
+    );
+
+    res.json({
+      success: true,
+      message: 'Electricity bill updated successfully',
+      bill,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/**
+ * @desc    Delete electricity bill & its reading
+ * @route   DELETE /api/electricity/bills/:id
+ * @access  Private (Owner)
+ */
+const deleteBill = async (req, res) => {
+  try {
+    const bill = await ElectricityBill.findById(req.params.id);
+    if (!bill) {
+      return res.status(404).json({ success: false, message: 'Electricity bill not found' });
+    }
+
+    const roomId = bill.room;
+
+    // Delete associated payments
+    await ElectricityPayment.deleteMany({ bill: bill._id });
+
+    // Delete associated reading
+    if (bill.reading) {
+      await ElectricityReading.findByIdAndDelete(bill.reading);
+    } else {
+      await ElectricityReading.findOneAndDelete({
+        room: bill.room,
+        billingMonth: bill.billingMonth,
+      });
+    }
+
+    await ElectricityBill.findByIdAndDelete(bill._id);
+
+    // Re-sync meter current reading
+    if (roomId) {
+      const latestReading = await ElectricityReading.findOne({ room: roomId }).sort({
+        billingMonth: -1,
+      });
+      const meter = await ElectricityMeter.findOne({ room: roomId });
+      const currentReading = latestReading
+        ? latestReading.currentReading
+        : meter?.initialReading || 0;
+      await ElectricityMeter.findOneAndUpdate({ room: roomId }, { currentReading });
+    }
+
+    await logAudit(
+      'DELETE_ELECTRICITY_BILL',
+      'ELECTRICITY',
+      { billNumber: bill.billNumber },
+      req
+    );
+
+    res.json({
+      success: true,
+      message: 'Electricity bill and associated meter reading deleted successfully',
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/**
+ * @desc    Update electricity meter reading
+ * @route   PUT /api/electricity/readings/:id
+ * @access  Private (Owner)
+ */
+const updateReading = async (req, res) => {
+  try {
+    const reading = await ElectricityReading.findById(req.params.id);
+    if (!reading) {
+      return res.status(404).json({ success: false, message: 'Meter reading not found' });
+    }
+
+    const {
+      currentReading,
+      previousReading,
+      ratePerUnit,
+      readingDate,
+      notes,
+    } = req.body;
+
+    if (currentReading !== undefined) reading.currentReading = Number(currentReading);
+    if (previousReading !== undefined) reading.previousReading = Number(previousReading);
+    if (ratePerUnit !== undefined) reading.ratePerUnit = Number(ratePerUnit);
+    if (readingDate) reading.readingDate = new Date(readingDate);
+    if (notes !== undefined) reading.notes = notes;
+
+    reading.unitsConsumed = Math.max(0, reading.currentReading - reading.previousReading);
+    reading.calculatedAmount = Math.round(reading.unitsConsumed * reading.ratePerUnit);
+    await reading.save();
+
+    // Sync any associated bill
+    const bill = await ElectricityBill.findOne({
+      $or: [{ reading: reading._id }, { room: reading.room, billingMonth: reading.billingMonth }],
+    });
+
+    if (bill) {
+      bill.previousReading = reading.previousReading;
+      bill.currentReading = reading.currentReading;
+      bill.unitsConsumed = reading.unitsConsumed;
+      bill.ratePerUnit = reading.ratePerUnit;
+      bill.billAmount = reading.calculatedAmount;
+      bill.totalDue = bill.billAmount + (bill.previousBalance || 0);
+      bill.remainingBalance = Math.max(0, bill.totalDue - (bill.amountPaid || 0));
+
+      if (bill.remainingBalance === 0) {
+        bill.status = 'Paid';
+      } else if (bill.amountPaid > 0) {
+        bill.status = 'Partially Paid';
+      } else {
+        bill.status = new Date() > new Date(bill.dueDate) ? 'Overdue' : 'Pending';
+      }
+      await bill.save();
+    }
+
+    // Sync meter
+    if (reading.room) {
+      const latestReading = await ElectricityReading.findOne({ room: reading.room }).sort({
+        billingMonth: -1,
+      });
+      if (latestReading) {
+        await ElectricityMeter.findOneAndUpdate(
+          { room: reading.room },
+          { currentReading: latestReading.currentReading }
+        );
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Meter reading and bill updated successfully',
+      reading,
+      bill,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/**
+ * @desc    Delete electricity meter reading
+ * @route   DELETE /api/electricity/readings/:id
+ * @access  Private (Owner)
+ */
+const deleteReading = async (req, res) => {
+  try {
+    const reading = await ElectricityReading.findById(req.params.id);
+    if (!reading) {
+      return res.status(404).json({ success: false, message: 'Meter reading not found' });
+    }
+
+    const roomId = reading.room;
+
+    // Delete associated bill and payments
+    const bill = await ElectricityBill.findOne({
+      $or: [{ reading: reading._id }, { room: reading.room, billingMonth: reading.billingMonth }],
+    });
+
+    if (bill) {
+      await ElectricityPayment.deleteMany({ bill: bill._id });
+      await ElectricityBill.findByIdAndDelete(bill._id);
+    }
+
+    await ElectricityReading.findByIdAndDelete(reading._id);
+
+    // Re-sync meter current reading
+    if (roomId) {
+      const latestReading = await ElectricityReading.findOne({ room: roomId }).sort({
+        billingMonth: -1,
+      });
+      const meter = await ElectricityMeter.findOne({ room: roomId });
+      const currentReading = latestReading
+        ? latestReading.currentReading
+        : meter?.initialReading || 0;
+      await ElectricityMeter.findOneAndUpdate({ room: roomId }, { currentReading });
+    }
+
+    res.json({
+      success: true,
+      message: 'Meter reading and associated bill deleted successfully',
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 module.exports = {
   getMeters,
   recordReading,
+  updateReading,
+  deleteReading,
   getReadings,
   getBills,
+  updateBill,
+  deleteBill,
   recordElectricityPayment,
   downloadElectricityBillPDF,
 };

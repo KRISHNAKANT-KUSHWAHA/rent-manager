@@ -17,8 +17,28 @@ export const getReadings = async (params = {}) => {
   return res.data;
 };
 
+export const updateReading = async (id, data) => {
+  const res = await api.put(`/electricity/readings/${id}`, data);
+  return res.data;
+};
+
+export const deleteReading = async (id) => {
+  const res = await api.delete(`/electricity/readings/${id}`);
+  return res.data;
+};
+
 export const getBills = async (params = {}) => {
   const res = await api.get('/electricity/bills', { params });
+  return res.data;
+};
+
+export const updateBill = async (id, data) => {
+  const res = await api.put(`/electricity/bills/${id}`, data);
+  return res.data;
+};
+
+export const deleteBill = async (id) => {
+  const res = await api.delete(`/electricity/bills/${id}`);
   return res.data;
 };
 
