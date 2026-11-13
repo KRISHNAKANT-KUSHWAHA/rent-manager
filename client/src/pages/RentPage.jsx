@@ -180,7 +180,7 @@ const RentPage = () => {
               : '0%'
           }
           icon={CheckCircle}
-          iconBg="bg-emerald-50 text-emerald-700"
+          iconBg="bg-orange-50 text-orange-600"
           trendType="positive"
         />
         <StatCard
@@ -249,7 +249,7 @@ const RentPage = () => {
                 type="month"
                 value={monthFilter}
                 onChange={(e) => setMonthFilter(e.target.value)}
-                className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
             </div>
           </SearchFilterBar>
@@ -281,7 +281,7 @@ const RentPage = () => {
               <tr key={inv._id} className="hover:bg-slate-50/60 transition">
                 <td className="py-4 px-4 sm:px-5">
                   <div className="font-mono font-bold text-slate-900">{inv.invoiceNumber}</div>
-                  <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                  <div className="text-[11px] text-orange-600 font-semibold mt-0.5">
                     {formatMonth(inv.billingMonth)}
                   </div>
                 </td>
@@ -307,7 +307,7 @@ const RentPage = () => {
                   {formatCurrency(inv.totalDue)}
                 </td>
 
-                <td className="py-4 px-4 sm:px-5 font-bold text-emerald-700 tabular-nums">
+                <td className="py-4 px-4 sm:px-5 font-bold text-slate-800 tabular-nums">
                   {formatCurrency(inv.amountPaid)}
                 </td>
 
@@ -373,7 +373,7 @@ const RentPage = () => {
               <td className="py-4 px-4 sm:px-5 text-slate-700">
                 {p.room?.roomNumber}
               </td>
-              <td className="py-4 px-4 sm:px-5 font-black text-emerald-700 text-sm tabular-nums">
+              <td className="py-4 px-4 sm:px-5 font-black text-slate-900 text-sm tabular-nums">
                 +{formatCurrency(p.amountPaid)}
               </td>
               <td className="py-4 px-4 sm:px-5">
@@ -427,10 +427,17 @@ const RentPage = () => {
 
             <Input
               label="Amount Paid Now (₹)"
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               required
               value={paymentForm.amountPaid}
-              onChange={(e) => setPaymentForm({ ...paymentForm, amountPaid: e.target.value })}
+              onChange={(e) =>
+                setPaymentForm({
+                  ...paymentForm,
+                  amountPaid: e.target.value.replace(/[^0-9]/g, ''),
+                })
+              }
               placeholder="Enter amount"
             />
 
@@ -495,7 +502,7 @@ const RentPage = () => {
             onChange={(e) => setGenerateMonth(e.target.value)}
           />
 
-          <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-800 leading-relaxed">
+          <div className="p-3.5 rounded-xl bg-orange-50/70 border border-orange-200 text-xs text-orange-900 leading-relaxed">
             <span className="font-bold">Safe & Idempotent:</span> If an invoice for a room already exists for this billing month, the system skips it to prevent double-billing.
           </div>
 

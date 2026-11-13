@@ -17,7 +17,7 @@ const Navbar = ({ onToggleSidebar }) => {
         </button>
 
         <div className="flex items-center gap-2 text-xs text-slate-600 font-medium truncate">
-          <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
           <span className="truncate max-w-[220px] sm:max-w-md font-semibold text-slate-700">
             {user?.houseAddress || 'Residential Property'}
           </span>
@@ -25,14 +25,14 @@ const Navbar = ({ onToggleSidebar }) => {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold">
-          <Shield className="w-3.5 h-3.5 text-emerald-600" />
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200/80 text-orange-800 text-xs font-semibold">
+          <Shield className="w-3.5 h-3.5 text-orange-600" />
           <span>Owner Authenticated</span>
         </div>
 
         {/* Owner profile display */}
         <div className="flex items-center gap-2 pl-2 sm:border-l border-slate-200">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-bold text-xs flex items-center justify-center shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-bold text-xs flex items-center justify-center shadow-sm">
             {user?.name ? user.name[0] : 'O'}
           </div>
           <span className="hidden md:inline text-xs font-bold text-slate-800">

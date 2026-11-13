@@ -154,7 +154,7 @@ const ExpensesPage = () => {
           value="Single House"
           subtitle="Direct owner accounts"
           icon={Home}
-          iconBg="bg-emerald-50 text-emerald-700"
+          iconBg="bg-orange-50 text-orange-600"
         />
       </div>
 
@@ -299,11 +299,18 @@ const ExpensesPage = () => {
             />
             <Input
               label="Amount (INR)"
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               required
               placeholder="e.g. 1200"
               value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  amount: e.target.value.replace(/[^0-9]/g, ''),
+                })
+              }
             />
           </div>
 
@@ -350,7 +357,7 @@ const ExpensesPage = () => {
             </label>
             <textarea
               rows={2}
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition"
               placeholder="Details about parts replaced, guarantee period..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}

@@ -245,7 +245,7 @@ const TenantsPage = () => {
           <tr key={tenant._id} className="hover:bg-slate-50/60 transition">
             <td className="py-4 px-4 sm:px-5">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-100">
+                <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-700 font-bold text-xs flex items-center justify-center shrink-0 border border-orange-200">
                   {tenant.fullName ? tenant.fullName[0] : 'T'}
                 </div>
                 <div className="min-w-0">
@@ -569,20 +569,30 @@ const TenantsPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Agreed Monthly Rent (INR)"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="8500"
                   value={formData.monthlyRent}
                   onChange={(e) =>
-                    setFormData({ ...formData, monthlyRent: e.target.value })
+                    setFormData({
+                      ...formData,
+                      monthlyRent: e.target.value.replace(/[^0-9]/g, ''),
+                    })
                   }
                 />
                 <Input
                   label="Security Deposit (INR) - Defaults to 0"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="0"
                   value={formData.securityDeposit}
                   onChange={(e) =>
-                    setFormData({ ...formData, securityDeposit: e.target.value })
+                    setFormData({
+                      ...formData,
+                      securityDeposit: e.target.value.replace(/[^0-9]/g, ''),
+                    })
                   }
                 />
               </div>
@@ -597,13 +607,17 @@ const TenantsPage = () => {
                   }
                 />
                 <Input
-                  label="Monthly Rent Due Day"
-                  type="number"
-                  min="1"
-                  max="31"
+                  label="Monthly Rent Due Day (1-31)"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="5"
                   value={formData.rentDueDay}
                   onChange={(e) =>
-                    setFormData({ ...formData, rentDueDay: e.target.value })
+                    setFormData({
+                      ...formData,
+                      rentDueDay: e.target.value.replace(/[^0-9]/g, ''),
+                    })
                   }
                 />
               </div>
@@ -683,11 +697,16 @@ const TenantsPage = () => {
               />
               <Input
                 label="Refund Amount (INR)"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="0"
                 value={vacateData.refundAmount}
                 onChange={(e) =>
-                  setVacateData({ ...vacateData, refundAmount: e.target.value })
+                  setVacateData({
+                    ...vacateData,
+                    refundAmount: e.target.value.replace(/[^0-9]/g, ''),
+                  })
                 }
               />
             </div>
@@ -695,11 +714,16 @@ const TenantsPage = () => {
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="Deduction Amount (if any)"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="0"
                 value={vacateData.deductionAmount}
                 onChange={(e) =>
-                  setVacateData({ ...vacateData, deductionAmount: e.target.value })
+                  setVacateData({
+                    ...vacateData,
+                    deductionAmount: e.target.value.replace(/[^0-9]/g, ''),
+                  })
                 }
               />
               <Input

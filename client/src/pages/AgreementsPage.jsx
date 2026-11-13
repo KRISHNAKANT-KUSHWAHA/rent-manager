@@ -426,25 +426,44 @@ const AgreementsPage = () => {
           <div className="grid grid-cols-3 gap-3">
             <Input
               label="Monthly Rent (₹)"
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               required
               value={formData.monthlyRent}
-              onChange={(e) => setFormData({ ...formData, monthlyRent: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  monthlyRent: e.target.value.replace(/[^0-9]/g, ''),
+                })
+              }
             />
             <Input
               label="Security Deposit (₹)"
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="0"
               value={formData.securityDeposit}
-              onChange={(e) => setFormData({ ...formData, securityDeposit: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  securityDeposit: e.target.value.replace(/[^0-9]/g, ''),
+                })
+              }
             />
             <Input
               label="Rent Due Day (1-31)"
-              type="number"
-              min="1"
-              max="31"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={formData.rentDueDay}
-              onChange={(e) => setFormData({ ...formData, rentDueDay: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  rentDueDay: e.target.value.replace(/[^0-9]/g, ''),
+                })
+              }
             />
           </div>
 
@@ -486,10 +505,17 @@ const AgreementsPage = () => {
 
             <Input
               label="New Monthly Rent (INR)"
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               required
               value={renewData.newMonthlyRent}
-              onChange={(e) => setRenewData({ ...renewData, newMonthlyRent: e.target.value })}
+              onChange={(e) =>
+                setRenewData({
+                  ...renewData,
+                  newMonthlyRent: e.target.value.replace(/[^0-9]/g, ''),
+                })
+              }
             />
 
             <Input
@@ -536,16 +562,28 @@ const AgreementsPage = () => {
             <div className="grid grid-cols-2 gap-3">
               <Input
                 label="Refund Amount (INR)"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={refundData.refundAmount}
-                onChange={(e) => setRefundData({ ...refundData, refundAmount: e.target.value })}
+                onChange={(e) =>
+                  setRefundData({
+                    ...refundData,
+                    refundAmount: e.target.value.replace(/[^0-9]/g, ''),
+                  })
+                }
               />
               <Input
                 label="Deduction (INR)"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={refundData.deductionAmount}
                 onChange={(e) =>
-                  setRefundData({ ...refundData, deductionAmount: e.target.value })
+                  setRefundData({
+                    ...refundData,
+                    deductionAmount: e.target.value.replace(/[^0-9]/g, ''),
+                  })
                 }
               />
             </div>

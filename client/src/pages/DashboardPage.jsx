@@ -80,14 +80,14 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-7 animate-in fade-in duration-150">
-      {/* Executive House Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0b1324] via-[#064e3b]/90 to-[#0b1324] text-white p-6 sm:p-8 shadow-xl border border-emerald-950/60">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent pointer-events-none" />
+      {/* Executive House Banner - Warm Charcoal & Orange */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] text-white p-6 sm:p-8 shadow-xl border border-slate-800">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-500/15 via-transparent to-transparent pointer-events-none" />
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-semibold backdrop-blur-md mb-2.5 border border-white/10">
-              <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-orange-200 text-xs font-semibold backdrop-blur-md mb-2.5 border border-white/10">
+              <Building2 className="w-3.5 h-3.5 text-orange-400" />
               <span>{user?.houseName || 'Residential Property'}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
@@ -147,7 +147,7 @@ const DashboardPage = () => {
                     ? 'bg-rose-50/70 border-rose-200/80 hover:border-rose-300 text-rose-950'
                     : rem.severity === 'high'
                     ? 'bg-amber-50/70 border-amber-200/80 hover:border-amber-300 text-amber-950'
-                    : 'bg-emerald-50/70 border-emerald-200/80 hover:border-emerald-300 text-emerald-950'
+                    : 'bg-orange-50/70 border-orange-200/80 hover:border-orange-300 text-orange-950'
                 }`}
               >
                 <div
@@ -156,7 +156,7 @@ const DashboardPage = () => {
                       ? 'bg-rose-100 text-rose-600'
                       : rem.severity === 'high'
                       ? 'bg-amber-100 text-amber-600'
-                      : 'bg-emerald-100 text-emerald-600'
+                      : 'bg-orange-100 text-orange-600'
                   }`}
                 >
                   <AlertTriangle className="w-4 h-4" />
@@ -193,7 +193,7 @@ const DashboardPage = () => {
             value={summary?.totalActiveTenants || 0}
             subtitle="Registered in house"
             icon={Users}
-            iconBg="bg-emerald-50 text-emerald-700"
+            iconBg="bg-orange-50 text-orange-600"
             onClick={() => navigate('/tenants')}
           />
           <StatCard
@@ -201,7 +201,7 @@ const DashboardPage = () => {
             value={formatCurrency(summary?.expectedMonthlyRent)}
             subtitle="From active agreements"
             icon={TrendingUp}
-            iconBg="bg-teal-50 text-teal-700"
+            iconBg="bg-amber-50 text-amber-700"
             onClick={() => navigate('/agreements')}
           />
           <StatCard
@@ -209,7 +209,7 @@ const DashboardPage = () => {
             value={formatCurrency(summary?.rentReceivedThisMonth)}
             subtitle={`Target: ${formatCurrency(summary?.expectedMonthlyRent)}`}
             icon={CheckCircle}
-            iconBg="bg-emerald-50 text-emerald-700"
+            iconBg="bg-orange-50 text-orange-600"
             trend={
               summary?.expectedMonthlyRent
                 ? `${Math.round(
@@ -225,7 +225,7 @@ const DashboardPage = () => {
             value={formatCurrency(summary?.pendingRent)}
             subtitle="Unpaid rent dues"
             icon={Clock}
-            iconBg="bg-amber-50 text-amber-800"
+            iconBg="bg-rose-50 text-rose-700"
             trendType={summary?.pendingRent > 0 ? 'negative' : 'positive'}
             onClick={() => navigate('/rent?status=Pending')}
           />
@@ -246,7 +246,7 @@ const DashboardPage = () => {
             }
             subtitle={`${summary?.availableRooms || 0} room(s) vacant`}
             icon={Building2}
-            iconBg="bg-emerald-50 text-emerald-700"
+            iconBg="bg-orange-50 text-orange-600"
             onClick={() => navigate('/rooms')}
           />
           <StatCard
@@ -267,7 +267,7 @@ const DashboardPage = () => {
         actions={
           <Link
             to="/reports"
-            className="text-xs text-emerald-700 hover:text-emerald-800 font-bold inline-flex items-center gap-1 transition"
+            className="text-xs text-orange-600 hover:text-orange-700 font-bold inline-flex items-center gap-1 transition"
           >
             <span>View Full Financial Report</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -316,9 +316,9 @@ const DashboardPage = () => {
                     : 'Expenses'
                 }
               />
-              <Bar dataKey="rent" fill="#059669" radius={[6, 6, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="electricity" fill="#0d9488" radius={[6, 6, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="expenses" fill="#f43f5e" radius={[6, 6, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="rent" fill="#ea580c" radius={[6, 6, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="electricity" fill="#f59e0b" radius={[6, 6, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="expenses" fill="#64748b" radius={[6, 6, 0, 0]} maxBarSize={32} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -333,7 +333,7 @@ const DashboardPage = () => {
           actions={
             <Link
               to="/rooms"
-              className="text-xs text-emerald-700 hover:text-emerald-800 font-bold transition"
+              className="text-xs text-orange-600 hover:text-orange-700 font-bold transition"
             >
               Manage All
             </Link>
@@ -350,7 +350,7 @@ const DashboardPage = () => {
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
                         room.status === 'Occupied'
-                          ? 'bg-emerald-100 text-emerald-800'
+                          ? 'bg-orange-100 text-orange-800'
                           : room.status === 'Available'
                           ? 'bg-slate-100 text-slate-700'
                           : 'bg-amber-100 text-amber-800'
@@ -400,7 +400,7 @@ const DashboardPage = () => {
           actions={
             <Link
               to="/rent"
-              className="text-xs text-emerald-700 hover:text-emerald-800 font-bold transition"
+              className="text-xs text-orange-600 hover:text-orange-700 font-bold transition"
             >
               View History
             </Link>
@@ -414,7 +414,7 @@ const DashboardPage = () => {
                   className="p-3.5 rounded-2xl border border-slate-200/70 hover:border-slate-300 transition bg-white flex items-center justify-between gap-3 shadow-soft-sm"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-xs shrink-0">
                       <CreditCard className="w-5 h-5" />
                     </div>
                     <div className="truncate">
@@ -430,7 +430,7 @@ const DashboardPage = () => {
 
                   <div className="text-right shrink-0 flex items-center gap-2">
                     <div>
-                      <div className="text-xs font-black text-emerald-700 tabular-nums">
+                      <div className="text-xs font-black text-orange-600 tabular-nums">
                         +{formatCurrency(pmt.amountPaid)}
                       </div>
                       <div className="text-[10px] text-slate-400 font-mono">
@@ -467,7 +467,7 @@ const DashboardPage = () => {
           actions={
             <Link
               to="/rent"
-              className="text-xs text-emerald-700 hover:text-emerald-800 font-bold transition"
+              className="text-xs text-orange-600 hover:text-orange-700 font-bold transition"
             >
               Go to Rent Management
             </Link>

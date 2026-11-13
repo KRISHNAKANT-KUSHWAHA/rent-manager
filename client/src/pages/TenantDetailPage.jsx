@@ -372,7 +372,7 @@ const TenantDetailPage = () => {
             {/* Identity Numbers Card */}
             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-emerald-600" />
+                <Shield className="w-4 h-4 text-orange-600" />
                 Identity Information (Protected)
               </h4>
               <div className="space-y-2 text-xs">

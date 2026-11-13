@@ -145,11 +145,11 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b1324] via-[#064e3b]/80 to-[#0b1324] flex flex-col justify-center items-center p-4 selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] flex flex-col justify-center items-center p-4 selection:bg-orange-500 selection:text-white">
       <div className={`w-full ${isSetupRequired ? 'max-w-2xl' : 'max-w-md'} transition-all duration-300`}>
         {/* Branding header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-xl shadow-emerald-500/25 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white shadow-xl shadow-orange-500/25 mb-4">
             <Building2 className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
@@ -159,7 +159,7 @@ const LoginPage = () => {
             Owner-Only Room Rental Management System
           </p>
 
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 text-emerald-300 text-xs font-semibold">
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 text-orange-300 text-xs font-semibold">
             <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
             <span>Single Residential House • Private Owner Portal</span>
           </div>
@@ -175,7 +175,7 @@ const LoginPage = () => {
                   <h2 className="text-lg font-bold text-slate-900">
                     First-Time House Setup Wizard
                   </h2>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200/80">
                     Step {setupStep} of 3
                   </span>
                 </div>
@@ -188,17 +188,17 @@ const LoginPage = () => {
               <div className="grid grid-cols-3 gap-2 mb-6">
                 <div
                   className={`h-1.5 rounded-full ${
-                    setupStep >= 1 ? 'bg-emerald-600' : 'bg-slate-200'
+                    setupStep >= 1 ? 'bg-orange-600' : 'bg-slate-200'
                   }`}
                 />
                 <div
                   className={`h-1.5 rounded-full ${
-                    setupStep >= 2 ? 'bg-emerald-600' : 'bg-slate-200'
+                    setupStep >= 2 ? 'bg-orange-600' : 'bg-slate-200'
                   }`}
                 />
                 <div
                   className={`h-1.5 rounded-full ${
-                    setupStep >= 3 ? 'bg-emerald-600' : 'bg-slate-200'
+                    setupStep >= 3 ? 'bg-orange-600' : 'bg-slate-200'
                   }`}
                 />
               </div>
@@ -305,14 +305,14 @@ const LoginPage = () => {
                       />
                       <Input
                         label="Default Electricity Rate (₹ / unit)"
-                        type="number"
-                        step="0.1"
+                        type="text"
+                        inputMode="decimal"
                         required
                         value={setupData.defaultElectricityRate}
                         onChange={(e) =>
                           setSetupData({
                             ...setupData,
-                            defaultElectricityRate: e.target.value,
+                            defaultElectricityRate: e.target.value.replace(/[^0-9.]/g, ''),
                           })
                         }
                       />
@@ -372,7 +372,7 @@ const LoginPage = () => {
                       <button
                         type="button"
                         onClick={addRoomRow}
-                        className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         Add Room
@@ -392,7 +392,7 @@ const LoginPage = () => {
                             <input
                               type="text"
                               required
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 font-bold text-slate-800"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                               value={room.roomNumber}
                               onChange={(e) =>
                                 updateRoomRow(idx, 'roomNumber', e.target.value)
@@ -409,7 +409,7 @@ const LoginPage = () => {
                               inputMode="numeric"
                               pattern="[0-9]*"
                               placeholder="0"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                               value={room.floor ?? ''}
                               onChange={(e) => {
                                 const val = e.target.value.replace(/[^0-9]/g, '');
@@ -428,7 +428,7 @@ const LoginPage = () => {
                               pattern="[0-9]*"
                               required
                               placeholder="e.g. 7500"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                               value={room.monthlyRent ?? ''}
                               onChange={(e) => {
                                 const val = e.target.value.replace(/[^0-9]/g, '');
@@ -446,7 +446,7 @@ const LoginPage = () => {
                               inputMode="numeric"
                               pattern="[0-9]*"
                               placeholder="0"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                               value={room.securityDeposit ?? ''}
                               onChange={(e) => {
                                 const val = e.target.value.replace(/[^0-9]/g, '');

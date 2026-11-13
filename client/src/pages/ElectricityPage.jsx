@@ -209,7 +209,7 @@ const ElectricityPage = () => {
               : '0%'
           }
           icon={CheckCircle}
-          iconBg="bg-emerald-50 text-emerald-700"
+          iconBg="bg-orange-50 text-orange-600"
           trendType="positive"
         />
         <StatCard
@@ -339,7 +339,7 @@ const ElectricityPage = () => {
                   {formatCurrency(bill.totalDue)}
                 </td>
 
-                <td className="py-4 px-4 sm:px-5 font-bold text-emerald-700 tabular-nums">
+                <td className="py-4 px-4 sm:px-5 font-bold text-slate-800 tabular-nums">
                   {formatCurrency(bill.amountPaid)}
                 </td>
 
@@ -434,7 +434,7 @@ const ElectricityPage = () => {
                     href={`/${r.readingPhoto}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-800 font-bold"
+                    className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-bold"
                   >
                     <Camera className="w-3.5 h-3.5" />
                     <span>View Meter Photo</span>
@@ -483,7 +483,7 @@ const ElectricityPage = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Rate/Unit:</span>
-                  <span className="font-bold text-emerald-700">₹{meter.ratePerUnit}</span>
+                  <span className="font-bold text-slate-800">₹{meter.ratePerUnit}</span>
                 </div>
               </div>
             </div>
@@ -548,24 +548,30 @@ const ElectricityPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Current Meter Reading"
-              type="number"
-              step="any"
+              type="text"
+              inputMode="decimal"
               required
               placeholder="e.g. 1420"
               value={readingForm.currentReading}
               onChange={(e) =>
-                setReadingForm({ ...readingForm, currentReading: e.target.value })
+                setReadingForm({
+                  ...readingForm,
+                  currentReading: e.target.value.replace(/[^0-9.]/g, ''),
+                })
               }
             />
 
             <Input
               label="Electricity Rate (₹/Unit)"
-              type="number"
-              step="0.1"
+              type="text"
+              inputMode="decimal"
               required
               value={readingForm.ratePerUnit}
               onChange={(e) =>
-                setReadingForm({ ...readingForm, ratePerUnit: e.target.value })
+                setReadingForm({
+                  ...readingForm,
+                  ratePerUnit: e.target.value.replace(/[^0-9.]/g, ''),
+                })
               }
             />
           </div>
@@ -620,10 +626,17 @@ const ElectricityPage = () => {
 
             <Input
               label="Amount Paid Now (₹)"
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               required
               value={paymentForm.amountPaid}
-              onChange={(e) => setPaymentForm({ ...paymentForm, amountPaid: e.target.value })}
+              onChange={(e) =>
+                setPaymentForm({
+                  ...paymentForm,
+                  amountPaid: e.target.value.replace(/[^0-9]/g, ''),
+                })
+              }
             />
 
             <div className="grid grid-cols-2 gap-3">

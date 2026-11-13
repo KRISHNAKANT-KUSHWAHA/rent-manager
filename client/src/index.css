@@ -15,6 +15,11 @@
     background-color: #f8fafc;
     min-height: 100vh;
   }
+
+  ::selection {
+    background-color: #f97316;
+    color: #ffffff;
+  }
   
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

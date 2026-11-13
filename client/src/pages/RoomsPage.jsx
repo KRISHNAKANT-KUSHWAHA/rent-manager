@@ -238,7 +238,7 @@ const RoomsPage = () => {
           {rooms.map((room) => (
             <div
               key={room._id}
-              className="bg-white rounded-2xl border border-slate-200/80 shadow-soft-sm hover:shadow-soft hover:border-emerald-300 transition-all duration-200 p-6 flex flex-col justify-between group"
+              className="bg-white rounded-2xl border border-slate-200/80 shadow-soft-sm hover:shadow-soft hover:border-orange-300 transition-all duration-200 p-6 flex flex-col justify-between group"
             >
               <div>
                 {/* Header: Room Number & Status */}
@@ -287,7 +287,7 @@ const RoomsPage = () => {
                 <div className="mt-4 p-3 rounded-xl border border-slate-200/60 flex items-center gap-3 text-xs">
                   {room.currentTenant ? (
                     <>
-                      <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-700 font-bold flex items-center justify-center shrink-0">
                         <User className="w-4 h-4" />
                       </div>
                       <div className="truncate">
@@ -300,8 +300,8 @@ const RoomsPage = () => {
                       </div>
                     </>
                   ) : (
-                    <div className="text-emerald-700 flex items-center gap-1.5 font-medium py-0.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <div className="text-orange-700 flex items-center gap-1.5 font-medium py-0.5">
+                      <CheckCircle2 className="w-4 h-4 text-orange-600" />
                       <span>Ready for new tenant registration</span>
                     </div>
                   )}
@@ -379,18 +379,32 @@ const RoomsPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Monthly Rent (₹)"
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               required
               placeholder="e.g. 7500"
               value={formData.monthlyRent}
-              onChange={(e) => setFormData({ ...formData, monthlyRent: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  monthlyRent: e.target.value.replace(/[^0-9]/g, ''),
+                })
+              }
             />
             <Input
               label="Security Deposit (₹) - Defaults to 0"
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="0"
               value={formData.securityDeposit}
-              onChange={(e) => setFormData({ ...formData, securityDeposit: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  securityDeposit: e.target.value.replace(/[^0-9]/g, ''),
+                })
+              }
             />
           </div>
 
@@ -428,7 +442,7 @@ const RoomsPage = () => {
             </label>
             <textarea
               rows={2}
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition"
               placeholder="West-facing room with direct sunlight, fresh paint..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -482,7 +496,7 @@ const RoomsPage = () => {
                 Current Tenancy
               </h4>
               {roomDetails.currentAgreement ? (
-                <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 space-y-2">
+                <div className="p-4 rounded-xl border border-orange-200 bg-orange-50/40 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-slate-900">
                       {roomDetails.currentTenant?.fullName}

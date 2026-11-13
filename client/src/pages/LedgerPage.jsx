@@ -107,7 +107,7 @@ const LedgerPage = () => {
           <select
             value={selectedTenantId}
             onChange={(e) => setSelectedTenantId(e.target.value)}
-            className="w-full text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            className="w-full text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
           >
             {tenants.map((t) => (
               <option key={t._id} value={t._id}>
@@ -121,7 +121,7 @@ const LedgerPage = () => {
           <select
             value={yearFilter}
             onChange={(e) => setYearFilter(Number(e.target.value))}
-            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
           >
             <option value={2026}>Year 2026</option>
             <option value={2025}>Year 2025</option>
@@ -130,7 +130,7 @@ const LedgerPage = () => {
           <select
             value={monthFilter}
             onChange={(e) => setMonthFilter(e.target.value)}
-            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
           >
             <option value="">All Months</option>
             <option value="01">January</option>
@@ -158,7 +158,7 @@ const LedgerPage = () => {
           {/* Tenant Meta Profile Card */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-soft-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-700 font-black text-xl flex items-center justify-center border border-emerald-200">
+              <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-700 font-black text-xl flex items-center justify-center border border-orange-200">
                 {tenant?.fullName ? tenant.fullName[0] : 'T'}
               </div>
               <div>
@@ -167,7 +167,7 @@ const LedgerPage = () => {
                   Mobile: <span className="font-semibold text-slate-700">{tenant?.primaryMobile}</span> •
                   Father: <span className="font-semibold text-slate-700">{tenant?.fatherName}</span>
                 </div>
-                <div className="text-xs text-emerald-700 font-bold mt-1">
+                <div className="text-xs text-orange-700 font-bold mt-1">
                   Room: {tenant?.currentRoom?.roomNumber || 'Vacated'} • Masked Aadhaar:{' '}
                   {tenant?.maskedAadhaar || 'XXXX-XXXX'}
                 </div>
@@ -182,7 +182,7 @@ const LedgerPage = () => {
                 className={`text-2xl font-black tabular-nums ${
                   summary?.totalOutstandingBalance > 0
                     ? 'text-rose-600'
-                    : 'text-emerald-700'
+                    : 'text-orange-700'
                 }`}
               >
                 {formatCurrency(summary?.totalOutstandingBalance)}
@@ -204,7 +204,7 @@ const LedgerPage = () => {
               value={formatCurrency(summary?.totalRentBilled)}
               subtitle={`Paid: ${formatCurrency(summary?.totalRentPaid)}`}
               icon={Receipt}
-              iconBg="bg-emerald-50 text-emerald-700"
+              iconBg="bg-orange-50 text-orange-600"
             />
             <StatCard
               title="Electricity Billed"
@@ -254,7 +254,7 @@ const LedgerPage = () => {
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
                           item.type.includes('Payment')
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            ? 'bg-orange-50 text-orange-700 border border-orange-200'
                             : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}
                       >
@@ -273,7 +273,7 @@ const LedgerPage = () => {
                       {item.debit > 0 ? formatCurrency(item.debit) : '—'}
                     </td>
 
-                    <td className="py-3.5 px-4 sm:px-5 font-black text-emerald-700 tabular-nums text-xs">
+                    <td className="py-3.5 px-4 sm:px-5 font-black text-slate-800 tabular-nums text-xs">
                       {item.credit > 0 ? `+${formatCurrency(item.credit)}` : '—'}
                     </td>
 

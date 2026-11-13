@@ -5,7 +5,7 @@ const StatCard = ({
   value,
   subtitle,
   icon: Icon,
-  iconBg = 'bg-emerald-50 text-emerald-700',
+  iconBg = 'bg-orange-50 text-orange-600',
   trend,
   trendType = 'neutral', // 'positive' | 'negative' | 'neutral'
   className = '',
@@ -15,7 +15,7 @@ const StatCard = ({
     <div
       onClick={onClick}
       className={`bg-white rounded-2xl p-5 border border-slate-200/80 shadow-soft-sm hover:shadow-soft transition-all duration-200 flex flex-col justify-between group ${
-        onClick ? 'cursor-pointer hover:border-emerald-300 hover:-translate-y-0.5' : ''
+        onClick ? 'cursor-pointer hover:border-orange-300 hover:-translate-y-0.5' : ''
       } ${className}`}
     >
       <div className="flex items-center justify-between gap-3">

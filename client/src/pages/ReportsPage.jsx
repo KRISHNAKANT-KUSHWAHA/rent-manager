@@ -110,7 +110,7 @@ const ReportsPage = () => {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
           >
             <option value={2026}>Year 2026</option>
             <option value={2025}>Year 2025</option>
@@ -118,7 +118,7 @@ const ReportsPage = () => {
           <select
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
           >
             <option value="">Whole Year</option>
             <option value="1">January</option>
@@ -148,7 +148,7 @@ const ReportsPage = () => {
               value={formatCurrency(summary?.totalRentCollected)}
               subtitle="Received in bank / cash"
               icon={Receipt}
-              iconBg="bg-emerald-50 text-emerald-700"
+              iconBg="bg-orange-50 text-orange-600"
             />
             <StatCard
               title="Electricity Recovery"
@@ -169,7 +169,7 @@ const ReportsPage = () => {
               value={formatCurrency(summary?.netProfit)}
               subtitle="(Gross Income - Expenses)"
               icon={TrendingUp}
-              iconBg="bg-emerald-50 text-emerald-700"
+              iconBg="bg-orange-50 text-orange-600"
               trendType="positive"
             />
           </div>
@@ -279,7 +279,7 @@ const ReportsPage = () => {
                       <td className="py-4 px-4 sm:px-5 font-semibold text-slate-800 tabular-nums text-xs">
                         {formatCurrency(room.monthlyRent)}/mo
                       </td>
-                      <td className="py-4 px-4 sm:px-5 font-bold text-emerald-700 tabular-nums text-xs">
+                      <td className="py-4 px-4 sm:px-5 font-bold text-slate-800 tabular-nums text-xs">
                         {formatCurrency(room.rentCollected)}
                       </td>
                       <td className="py-4 px-4 sm:px-5 font-bold text-teal-700 tabular-nums text-xs">

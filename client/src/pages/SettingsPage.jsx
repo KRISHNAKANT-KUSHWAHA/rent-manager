@@ -153,14 +153,14 @@ const SettingsPage = () => {
                 />
                 <Input
                   label="Default Electricity Rate (₹ / unit)"
-                  type="number"
-                  step="0.1"
+                  type="text"
+                  inputMode="decimal"
                   required
                   value={profileForm.defaultElectricityRate}
                   onChange={(e) =>
                     setProfileForm({
                       ...profileForm,
-                      defaultElectricityRate: e.target.value,
+                      defaultElectricityRate: e.target.value.replace(/[^0-9.]/g, ''),
                     })
                   }
                 />
@@ -337,7 +337,7 @@ const SettingsPage = () => {
           {/* System Security Notice Box */}
           <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-md border border-slate-800">
             <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider mb-2">
-              <Shield className="w-4 h-4 text-emerald-400" />
+              <Shield className="w-4 h-4 text-orange-400" />
               <span>Owner Security Protocol</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">

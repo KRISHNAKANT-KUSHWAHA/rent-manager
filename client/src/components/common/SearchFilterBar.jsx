@@ -29,7 +29,7 @@ const SearchFilterBar = ({
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={placeholder}
-              className="w-full pl-10 pr-9 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-50/70 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-800 placeholder:text-slate-400"
+              className="w-full pl-10 pr-9 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-50/70 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-slate-800 placeholder:text-slate-400"
             />
             {search && (
               <button
@@ -51,7 +51,7 @@ const SearchFilterBar = ({
                 <select
                   value={filter.value}
                   onChange={(e) => filter.onChange(e.target.value)}
-                  className="w-full text-xs font-semibold py-2 px-3 pr-8 rounded-xl bg-slate-50/70 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all appearance-none cursor-pointer"
+                  className="w-full text-xs font-semibold py-2 px-3 pr-8 rounded-xl bg-slate-50/70 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all appearance-none cursor-pointer"
                 >
                   {filter.options.map((opt) => (
                     <option key={opt.value} value={opt.value}>

@@ -47,7 +47,7 @@ const Input = forwardRef(
             } pr-3.5 py-2.5 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
               error
                 ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-200 text-rose-900'
-                : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20 text-slate-800'
+                : 'border-slate-200 focus:border-orange-500 focus:ring-orange-500/20 text-slate-800'
             } ${className}`}
             {...props}
           />

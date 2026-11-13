@@ -18,15 +18,15 @@ const Button = ({
 
   const variants = {
     primary:
-      'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-soft focus:ring-emerald-500',
+      'bg-orange-600 hover:bg-orange-700 text-white shadow-sm hover:shadow-soft focus:ring-orange-500',
     brand:
-      'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-soft focus:ring-emerald-500',
+      'bg-orange-600 hover:bg-orange-700 text-white shadow-sm hover:shadow-soft focus:ring-orange-500',
     dark:
       'bg-slate-900 hover:bg-slate-800 text-white shadow-sm hover:shadow-soft focus:ring-slate-700',
     secondary:
-      'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 shadow-soft-sm focus:ring-emerald-500',
+      'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 shadow-soft-sm focus:ring-orange-500',
     outline:
-      'bg-transparent hover:bg-emerald-50 text-emerald-700 border border-emerald-300 focus:ring-emerald-500',
+      'bg-transparent hover:bg-orange-50 text-orange-700 border border-orange-300 focus:ring-orange-500',
     danger:
       'bg-rose-600 hover:bg-rose-700 text-white shadow-sm hover:shadow-soft focus:ring-rose-500',
     success:
