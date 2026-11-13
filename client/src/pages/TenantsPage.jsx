@@ -961,7 +961,7 @@ const TenantsPage = () => {
         >
           {/* Tabs */}
           <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100 overflow-x-auto whitespace-nowrap text-xs font-bold no-scrollbar">
-            {['personal', 'family', 'identity'].map((tab, i) => (
+            {['personal', 'family', 'identity', 'rent'].map((tab, i) => (
               <button
                 key={tab}
                 type="button"
@@ -972,7 +972,7 @@ const TenantsPage = () => {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {i + 1}. {tab === 'personal' ? 'Personal Info' : tab === 'family' ? 'Room Members' : 'Identity Proofs'}
+                {i + 1}. {tab === 'personal' ? 'Personal Info' : tab === 'family' ? 'Room Members' : tab === 'identity' ? 'Identity Proofs' : 'Room & Rent'}
               </button>
             ))}
           </div>
@@ -1037,22 +1037,6 @@ const TenantsPage = () => {
                   value={editFormData.permanentAddress}
                   onChange={(e) => setEditFormData({ ...editFormData, permanentAddress: e.target.value })}
                 />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <Input
-                    label="Monthly Rent (INR)"
-                    type="text"
-                    inputMode="numeric"
-                    value={editFormData.monthlyRent}
-                    onChange={(e) => setEditFormData({ ...editFormData, monthlyRent: e.target.value.replace(/[^0-9]/g, '') })}
-                  />
-                  <Input
-                    label="Rent Due Day (1–31)"
-                    type="text"
-                    inputMode="numeric"
-                    value={editFormData.rentDueDay}
-                    onChange={(e) => setEditFormData({ ...editFormData, rentDueDay: e.target.value.replace(/[^0-9]/g, '') })}
-                  />
-                </div>
               </div>
             )}
 
@@ -1140,19 +1124,69 @@ const TenantsPage = () => {
               </div>
             )}
 
+            {/* Tab 4: Room & Rent */}
+            {editTab === 'rent' && (
+              <div className="space-y-4 animate-in fade-in">
+                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 leading-relaxed">
+                  <strong>Note:</strong> To change the assigned room, use the Vacate flow first, then register the tenant in the new room.
+                </div>
+                {selectedTenant?.currentRoom && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">
+                      🏠
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">Current Room: {selectedTenant.currentRoom.roomNumber}</div>
+                      <div className="text-[11px] text-slate-500">{selectedTenant.currentRoom.floorName || `Floor ${selectedTenant.currentRoom.floor}`}</div>
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <Input
+                    label="Monthly Rent (INR)"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="8500"
+                    value={editFormData.monthlyRent}
+                    onChange={(e) => setEditFormData({ ...editFormData, monthlyRent: e.target.value.replace(/[^0-9]/g, '') })}
+                  />
+                  <Input
+                    label="Security Deposit (INR)"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="0"
+                    value={editFormData.securityDeposit}
+                    onChange={(e) => setEditFormData({ ...editFormData, securityDeposit: e.target.value.replace(/[^0-9]/g, '') })}
+                  />
+                </div>
+                <Input
+                  label="Rent Due Day (1–31)"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="5"
+                  value={editFormData.rentDueDay}
+                  onChange={(e) => setEditFormData({ ...editFormData, rentDueDay: e.target.value.replace(/[^0-9]/g, '') })}
+                />
+              </div>
+            )}
+
             {/* Footer */}
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
               <Button type="button" variant="secondary" onClick={() => setIsEditOpen(false)}>
                 Cancel
               </Button>
               <div className="flex items-center gap-2">
-                {editTab !== 'identity' ? (
+                {editTab !== 'rent' ? (
                   <Button
                     type="button"
                     variant="dark"
                     onClick={() => {
                       if (editTab === 'personal') setEditTab('family');
                       else if (editTab === 'family') setEditTab('identity');
+                      else if (editTab === 'identity') setEditTab('rent');
                     }}
                   >
                     Next
