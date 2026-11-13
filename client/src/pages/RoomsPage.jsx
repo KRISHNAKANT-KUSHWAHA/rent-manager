@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getRooms, getRoom, createRoom, updateRoom, deleteRoom } from '../api/roomApi';
 import { useToast } from '../context/ToastContext';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -12,6 +12,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import EmptyState from '../components/common/EmptyState';
 import Skeleton from '../components/common/Skeleton';
 import SearchFilterBar from '../components/common/SearchFilterBar';
+import { useDataCache, invalidateCache } from '../hooks/useDataCache';
 import {
   Home,
   Plus,
@@ -26,8 +27,6 @@ import {
 } from 'lucide-react';
 
 const RoomsPage = () => {
-  const [rooms, setRooms] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [floorFilter, setFloorFilter] = useState('all');
@@ -58,27 +57,23 @@ const RoomsPage = () => {
 
   const toast = useToast();
 
-  const fetchRooms = async () => {
-    try {
-      setLoading(true);
-      const res = await getRooms({
-        search,
-        status: statusFilter,
-        floor: floorFilter,
-      });
-      if (res.success) {
-        setRooms(res.rooms);
-      }
-    } catch (err) {
-      toast.error('Failed to load rooms');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Instant SWR Cached Data
+  const roomsFetcher = useCallback(async () => {
+    const res = await getRooms({
+      search,
+      status: statusFilter,
+      floor: floorFilter,
+    });
+    return res.success ? res.rooms : [];
+  }, [search, statusFilter, floorFilter]);
 
-  useEffect(() => {
-    fetchRooms();
-  }, [statusFilter, floorFilter]);
+  const {
+    data: roomsData,
+    setData: setRooms,
+    loading,
+    refresh: fetchRooms,
+  } = useDataCache(`rooms-${statusFilter}-${floorFilter}-${search}`, roomsFetcher, { initialData: [] });
+  const rooms = roomsData || [];
 
   const handleOpenAdd = () => {
     setSelectedRoom(null);
@@ -142,6 +137,7 @@ const RoomsPage = () => {
       }
 
       setIsFormOpen(false);
+      invalidateCache('rooms');
       fetchRooms();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save room details');
@@ -157,6 +153,7 @@ const RoomsPage = () => {
       await deleteRoom(selectedRoom._id);
       toast.success(`Room ${selectedRoom.roomNumber} deleted successfully`);
       setIsDeleteOpen(false);
+      invalidateCache('rooms');
       fetchRooms();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Cannot delete room');
