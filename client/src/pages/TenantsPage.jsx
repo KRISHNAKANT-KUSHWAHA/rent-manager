@@ -357,7 +357,7 @@ const TenantsPage = () => {
             </td>
 
             <td className="py-4 px-4 sm:px-5 font-mono text-slate-600 text-xs">
-              {tenant.maskedAadhaar || maskAadhaar(tenant.aadhaarNumber)}
+              {tenant.aadhaarNumber || '—'}
             </td>
 
             <td className="py-4 px-4 sm:px-5 text-slate-600 text-xs font-medium">
