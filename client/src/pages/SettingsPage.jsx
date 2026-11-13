@@ -210,7 +210,7 @@ const SettingsPage = () => {
               <div className="pt-4 border-t border-slate-100 flex justify-end">
                 <Button
                   type="submit"
-                  variant="primary"
+                  variant="brand"
                   icon={Save}
                   loading={profileSubmitting}
                 >
@@ -325,7 +325,7 @@ const SettingsPage = () => {
 
               <Button
                 type="submit"
-                variant="primary"
+                variant="brand"
                 className="w-full mt-2"
                 loading={passSubmitting}
               >

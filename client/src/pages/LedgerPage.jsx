@@ -3,26 +3,27 @@ import { useSearchParams } from 'react-router-dom';
 import { getTenantLedger } from '../api/ledgerApi';
 import { getTenants } from '../api/tenantApi';
 import { useToast } from '../context/ToastContext';
-import { formatDate, formatCurrency, formatDateTime } from '../utils/formatters';
+import { formatDate, formatCurrency } from '../utils/formatters';
 import PageHeader from '../components/layout/PageHeader';
 import Button from '../components/common/Button';
 import Select from '../components/common/Select';
 import Badge from '../components/common/Badge';
+import Card from '../components/common/Card';
+import Table from '../components/common/Table';
 import StatCard from '../components/common/StatCard';
-import Skeleton from '../components/common/Skeleton';
 import EmptyState from '../components/common/EmptyState';
+import Skeleton from '../components/common/Skeleton';
 import {
   BookOpenText,
   User,
   Home,
   Receipt,
   Zap,
-  TrendingDown,
-  TrendingUp,
   Shield,
   Printer,
   Calendar,
   CreditCard,
+  Clock,
 } from 'lucide-react';
 
 const LedgerPage = () => {
@@ -83,7 +84,7 @@ const LedgerPage = () => {
   const { tenant, summary, timeline } = ledgerData || {};
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-150">
       <PageHeader
         title="Tenant Financial Ledger"
         subtitle="Individual accounting statements showing rent dues, sub-meter electricity, payments received, and running balance."
@@ -98,78 +99,75 @@ const LedgerPage = () => {
       </PageHeader>
 
       {/* Tenant Selector & Filter Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3 w-full md:w-80">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-soft-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 w-full md:w-96">
+          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
             Tenant:
           </label>
-          <Select
+          <select
             value={selectedTenantId}
             onChange={(e) => setSelectedTenantId(e.target.value)}
+            className="w-full text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
           >
             {tenants.map((t) => (
               <option key={t._id} value={t._id}>
                 {t.fullName} ({t.currentRoom?.roomNumber || 'Vacated'})
               </option>
             ))}
-          </Select>
+          </select>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="w-32">
-            <Select
-              value={yearFilter}
-              onChange={(e) => setYearFilter(Number(e.target.value))}
-              options={[
-                { value: 2026, label: 'Year 2026' },
-                { value: 2025, label: 'Year 2025' },
-              ]}
-            />
-          </div>
+          <select
+            value={yearFilter}
+            onChange={(e) => setYearFilter(Number(e.target.value))}
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+          >
+            <option value={2026}>Year 2026</option>
+            <option value={2025}>Year 2025</option>
+          </select>
 
-          <div className="w-36">
-            <Select
-              value={monthFilter}
-              onChange={(e) => setMonthFilter(e.target.value)}
-              options={[
-                { value: '', label: 'All Months' },
-                { value: '01', label: 'January' },
-                { value: '02', label: 'February' },
-                { value: '03', label: 'March' },
-                { value: '04', label: 'April' },
-                { value: '05', label: 'May' },
-                { value: '06', label: 'June' },
-                { value: '07', label: 'July' },
-                { value: '08', label: 'August' },
-                { value: '09', label: 'September' },
-                { value: '10', label: 'October' },
-                { value: '11', label: 'November' },
-                { value: '12', label: 'December' },
-              ]}
-            />
-          </div>
+          <select
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+          >
+            <option value="">All Months</option>
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03">March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
         </div>
       </div>
 
       {loading ? (
-        <Skeleton className="h-72" count={2} />
+        <Skeleton className="h-72 rounded-2xl" count={2} />
       ) : !ledgerData ? (
         <EmptyState title="Select a tenant to view financial records" />
       ) : (
         <div className="space-y-6">
           {/* Tenant Meta Profile Card */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-soft-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-700 font-black text-xl flex items-center justify-center border border-indigo-200">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-700 font-black text-xl flex items-center justify-center border border-emerald-200">
                 {tenant?.fullName ? tenant.fullName[0] : 'T'}
               </div>
               <div>
                 <h3 className="text-xl font-black text-slate-900">{tenant?.fullName}</h3>
-                <div className="text-xs text-slate-500 mt-0.5">
-                  Mobile: <span className="font-semibold">{tenant?.primaryMobile}</span> •
-                  Father: <span className="font-semibold">{tenant?.fatherName}</span>
+                <div className="text-xs text-slate-500 mt-0.5 font-medium">
+                  Mobile: <span className="font-semibold text-slate-700">{tenant?.primaryMobile}</span> •
+                  Father: <span className="font-semibold text-slate-700">{tenant?.fatherName}</span>
                 </div>
-                <div className="text-xs text-indigo-600 font-bold mt-1">
+                <div className="text-xs text-emerald-700 font-bold mt-1">
                   Room: {tenant?.currentRoom?.roomNumber || 'Vacated'} • Masked Aadhaar:{' '}
                   {tenant?.maskedAadhaar || 'XXXX-XXXX'}
                 </div>
@@ -177,14 +175,14 @@ const LedgerPage = () => {
             </div>
 
             <div className="text-right border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-6">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                 Net Outstanding Balance
               </span>
               <span
-                className={`text-2xl font-black ${
+                className={`text-2xl font-black tabular-nums ${
                   summary?.totalOutstandingBalance > 0
                     ? 'text-rose-600'
-                    : 'text-emerald-600'
+                    : 'text-emerald-700'
                 }`}
               >
                 {formatCurrency(summary?.totalOutstandingBalance)}
@@ -195,112 +193,97 @@ const LedgerPage = () => {
           {/* Ledger Metric Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard
-              title="Security Deposit Held"
+              title="Deposit Held"
               value={formatCurrency(summary?.totalSecurityDepositHeld)}
               subtitle={`Refunded: ${formatCurrency(summary?.totalSecurityDepositRefunded)}`}
               icon={Shield}
-              iconBg="bg-blue-50 text-blue-600"
+              iconBg="bg-slate-100 text-slate-700"
             />
             <StatCard
               title="Total Rent Billed"
               value={formatCurrency(summary?.totalRentBilled)}
               subtitle={`Paid: ${formatCurrency(summary?.totalRentPaid)}`}
               icon={Receipt}
-              iconBg="bg-indigo-50 text-indigo-600"
+              iconBg="bg-emerald-50 text-emerald-700"
             />
             <StatCard
               title="Electricity Billed"
               value={formatCurrency(summary?.totalElectricityBilled)}
               subtitle={`Paid: ${formatCurrency(summary?.totalElectricityPaid)}`}
               icon={Zap}
-              iconBg="bg-amber-50 text-amber-600"
+              iconBg="bg-teal-50 text-teal-700"
             />
             <StatCard
-              title="Total Arrears Pending"
+              title="Pending Arrears"
               value={formatCurrency(summary?.totalOutstandingBalance)}
-              subtitle={`Rent: ${formatCurrency(summary?.pendingRent)} • Elec: ${formatCurrency(summary?.pendingElectricity)}`}
-              icon={TrendingDown}
-              iconBg="bg-rose-50 text-rose-600"
+              subtitle="Remaining balance"
+              icon={Clock}
+              iconBg="bg-amber-50 text-amber-800"
               trendType={summary?.totalOutstandingBalance > 0 ? 'negative' : 'positive'}
             />
           </div>
 
-          {/* Detailed Transaction History Table (Debit & Credit Timeline) */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h4 className="text-base font-bold text-slate-900">
-                  Debit / Credit Accounting Timeline
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Complete chronology of invoices generated (debits) and payments recorded (credits)
-                </p>
-              </div>
-            </div>
+          {/* Detailed Statement Table */}
+          <Card
+            title="Chronological Financial Transactions"
+            subtitle="Complete statement of rent invoices, payments, meter readings, and running balance."
+            bodyClassName="p-0"
+          >
+            <Table
+              headers={[
+                'Date',
+                'Type',
+                'Description / Reference',
+                'Debited (Dues)',
+                'Credited (Paid)',
+                'Status',
+              ]}
+              empty={!timeline || timeline.length === 0}
+              emptyTitle="No financial records found"
+              emptyMessage="There are no transactions recorded for the selected period."
+              emptyIcon={BookOpenText}
+            >
+              {timeline &&
+                timeline.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/60 transition">
+                    <td className="py-3.5 px-4 sm:px-5 text-slate-600 font-medium text-xs">
+                      {formatDate(item.date)}
+                    </td>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
-                  <tr>
-                    <th className="py-4 px-6">Transaction Date</th>
-                    <th className="py-4 px-6">Type & Ref</th>
-                    <th className="py-4 px-6">Description</th>
-                    <th className="py-4 px-6 text-right">Debit (Due)</th>
-                    <th className="py-4 px-6 text-right">Credit (Paid)</th>
-                    <th className="py-4 px-6 text-right">Running Balance</th>
+                    <td className="py-3.5 px-4 sm:px-5">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                          item.type.includes('Payment')
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}
+                      >
+                        {item.type}
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-5">
+                      <div className="font-bold text-slate-900 text-xs">{item.title}</div>
+                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                        Ref: {item.reference}
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-5 font-bold text-slate-900 tabular-nums text-xs">
+                      {item.debit > 0 ? formatCurrency(item.debit) : '—'}
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-5 font-black text-emerald-700 tabular-nums text-xs">
+                      {item.credit > 0 ? `+${formatCurrency(item.credit)}` : '—'}
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-5">
+                      <Badge status={item.status} />
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {timeline && timeline.length > 0 ? (
-                    timeline.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition">
-                        <td className="py-4 px-6 text-slate-600 font-medium">
-                          {formatDate(item.date)}
-                        </td>
-
-                        <td className="py-4 px-6">
-                          <span
-                            className={`font-semibold px-2 py-0.5 rounded-md text-[11px] ${
-                              item.category === 'Rent'
-                                ? 'bg-indigo-50 text-indigo-700'
-                                : 'bg-amber-50 text-amber-700'
-                            }`}
-                          >
-                            {item.category}
-                          </span>
-                          <span className="block font-mono text-[10px] text-slate-400 mt-0.5">
-                            {item.reference}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-6 text-slate-800 font-medium">
-                          {item.description}
-                        </td>
-
-                        <td className="py-4 px-6 text-right font-bold text-slate-900">
-                          {item.debit > 0 ? formatCurrency(item.debit) : '-'}
-                        </td>
-
-                        <td className="py-4 px-6 text-right font-black text-emerald-600">
-                          {item.credit > 0 ? `+${formatCurrency(item.credit)}` : '-'}
-                        </td>
-
-                        <td className="py-4 px-6 text-right font-mono font-black text-slate-900 text-sm">
-                          {formatCurrency(item.runningBalance)}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
-                        No financial transactions on record for this filter.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                ))}
+            </Table>
+          </Card>
         </div>
       )}
     </div>
@@ -308,4 +291,3 @@ const LedgerPage = () => {
 };
 
 export default LedgerPage;
-

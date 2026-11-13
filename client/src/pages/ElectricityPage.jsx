@@ -17,8 +17,9 @@ import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Badge from '../components/common/Badge';
 import Modal from '../components/common/Modal';
-import EmptyState from '../components/common/EmptyState';
-import Skeleton from '../components/common/Skeleton';
+import Table from '../components/common/Table';
+import StatCard from '../components/common/StatCard';
+import SearchFilterBar from '../components/common/SearchFilterBar';
 import {
   Zap,
   Plus,
@@ -27,9 +28,9 @@ import {
   Printer,
   History,
   CheckCircle,
-  AlertCircle,
   Camera,
   Coins,
+  Gauge,
 } from 'lucide-react';
 
 const ElectricityPage = () => {
@@ -100,49 +101,50 @@ const ElectricityPage = () => {
     }
   }, [statusFilter]);
 
+  // Handle Room Selection for Reading
   const handleRoomSelect = (roomId) => {
     const selectedRoom = rooms.find((r) => r._id === roomId);
-    setReadingForm((prev) => ({
-      ...prev,
-      roomId,
-      meterNumber: selectedRoom?.electricityMeterNumber || `MTR-${selectedRoom?.roomNumber || ''}`,
-    }));
+    if (selectedRoom) {
+      const meter = meters.find((m) => m.room?._id === roomId);
+      setReadingForm({
+        ...readingForm,
+        roomId,
+        meterNumber: selectedRoom.electricityMeterNumber || meter?.meterNumber || '',
+        ratePerUnit: meter?.ratePerUnit || 9.5,
+      });
+    }
   };
 
-  const handleReadingSubmit = async (e) => {
+  const handleRecordReading = async (e) => {
     e.preventDefault();
-    if (!readingForm.roomId || !readingForm.currentReading) {
-      toast.error('Room and current meter reading are required');
-      return;
-    }
-
     setSubmitting(true);
+
     try {
-      const formData = new FormData();
+      const data = new FormData();
       Object.keys(readingForm).forEach((key) => {
-        formData.append(key, readingForm[key]);
+        data.append(key, readingForm[key]);
       });
       if (readingPhoto) {
-        formData.append('meterPhoto', readingPhoto);
+        data.append('photo', readingPhoto);
       }
 
-      const res = await recordReading(formData);
-      toast.success(res.message || 'Meter reading recorded & bill generated');
+      const res = await recordReading(data);
+      toast.success(res.message || 'Meter reading and electricity bill generated!');
       setIsReadingOpen(false);
       setReadingPhoto(null);
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error recording meter reading');
+      toast.error(err.response?.data?.message || 'Failed to record meter reading');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handlePaymentSubmit = async (e) => {
+  const handleRecordPayment = async (e) => {
     e.preventDefault();
     if (!selectedBill) return;
-
     setSubmitting(true);
+
     try {
       const res = await recordElectricityPayment({
         billId: selectedBill._id,
@@ -158,25 +160,23 @@ const ElectricityPage = () => {
     }
   };
 
+  // Summaries
+  const totalBilled = bills.reduce((acc, b) => acc + (b.totalDue || 0), 0);
+  const totalCollected = bills.reduce((acc, b) => acc + (b.amountPaid || 0), 0);
+  const totalPending = bills.reduce((acc, b) => acc + (b.remainingBalance || 0), 0);
+  const totalUnits = bills.reduce((acc, b) => acc + (b.unitsConsumed || 0), 0);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-150">
       <PageHeader
-        title="Electricity Sub-Meter Management"
-        subtitle="Record monthly sub-meter readings, automatically calculate consumption charges, and manage electricity billing."
+        title="Electricity Management"
+        subtitle="Record monthly sub-meter readings, calculate exact consumption (Units × Rate), and track utility bills."
       >
         <Button
-          variant="primary"
+          variant="brand"
           icon={Plus}
           onClick={() => {
-            setReadingForm({
-              roomId: '',
-              meterNumber: '',
-              billingMonth: new Date().toISOString().slice(0, 7),
-              currentReading: '',
-              readingDate: new Date().toISOString().slice(0, 10),
-              ratePerUnit: 9.5,
-              notes: '',
-            });
+            if (rooms.length > 0) handleRoomSelect(rooms[0]._id);
             setIsReadingOpen(true);
           }}
         >
@@ -184,320 +184,346 @@ const ElectricityPage = () => {
         </Button>
       </PageHeader>
 
-      {/* Tab Switcher & Status Filter */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs font-bold w-full md:w-auto">
-          <button
-            onClick={() => setActiveTab('bills')}
-            className={`px-4 py-2 rounded-xl transition ${
-              activeTab === 'bills'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Electricity Bills ({bills.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('readings')}
-            className={`px-4 py-2 rounded-xl transition ${
-              activeTab === 'readings'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Meter Readings History ({readings.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('meters')}
-            className={`px-4 py-2 rounded-xl transition ${
-              activeTab === 'meters'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Sub-Meters ({meters.length})
-          </button>
-        </div>
+      {/* Electricity KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Consumption"
+          value={`${totalUnits} Units`}
+          subtitle="Billed across sub-meters"
+          icon={Zap}
+          iconBg="bg-teal-50 text-teal-700"
+        />
+        <StatCard
+          title="Total Billed"
+          value={formatCurrency(totalBilled)}
+          subtitle={`${bills.length} monthly bills`}
+          icon={Receipt}
+          iconBg="bg-slate-100 text-slate-700"
+        />
+        <StatCard
+          title="Collected"
+          value={formatCurrency(totalCollected)}
+          subtitle={
+            totalBilled
+              ? `${Math.round((totalCollected / totalBilled) * 100)}% Recovered`
+              : '0%'
+          }
+          icon={CheckCircle}
+          iconBg="bg-emerald-50 text-emerald-700"
+          trendType="positive"
+        />
+        <StatCard
+          title="Pending Arrears"
+          value={formatCurrency(totalPending)}
+          subtitle="Uncollected utility charges"
+          icon={Coins}
+          iconBg="bg-amber-50 text-amber-800"
+          trendType={totalPending > 0 ? 'negative' : 'positive'}
+        />
+      </div>
 
-        {activeTab === 'bills' && (
-          <div className="w-48">
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All Statuses' },
-                { value: 'Pending', label: 'Pending' },
-                { value: 'Partially Paid', label: 'Partially Paid' },
-                { value: 'Paid', label: 'Paid' },
-                { value: 'Overdue', label: 'Overdue' },
-              ]}
-            />
-          </div>
-        )}
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2">
+        <button
+          onClick={() => setActiveTab('bills')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'bills'
+              ? 'bg-slate-900 text-white shadow-soft-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Receipt className="w-4 h-4" />
+          <span>Electricity Bills ({bills.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('readings')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'readings'
+              ? 'bg-slate-900 text-white shadow-soft-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          <span>Reading History ({readings.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('meters')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'meters'
+              ? 'bg-slate-900 text-white shadow-soft-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Gauge className="w-4 h-4" />
+          <span>Sub-Meters ({meters.length})</span>
+        </button>
       </div>
 
       {/* TAB 1: Electricity Bills */}
       {activeTab === 'bills' && (
-        <>
-          {loading ? (
-            <Skeleton className="h-64" count={3} />
-          ) : bills.length === 0 ? (
-            <EmptyState
-              icon={Zap}
-              title="No electricity bills found"
-              description="Record a monthly meter reading to generate electricity bills."
-              actionLabel="Record Reading"
-              onAction={() => setIsReadingOpen(true)}
-            />
-          ) : (
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
-                    <tr>
-                      <th className="py-4 px-6">Bill Ref & Month</th>
-                      <th className="py-4 px-6">Room & Tenant</th>
-                      <th className="py-4 px-6">Readings & Units</th>
-                      <th className="py-4 px-6">Unit Rate</th>
-                      <th className="py-4 px-6">Total Due</th>
-                      <th className="py-4 px-6">Paid</th>
-                      <th className="py-4 px-6">Balance</th>
-                      <th className="py-4 px-6">Status</th>
-                      <th className="py-4 px-6 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {bills.map((bill) => (
-                      <tr key={bill._id} className="hover:bg-slate-50/50 transition">
-                        <td className="py-4 px-6 font-mono">
-                          <div className="font-bold text-slate-900">{bill.billNumber}</div>
-                          <div className="text-[11px] text-amber-700 font-sans font-bold">
-                            {formatMonth(bill.billingMonth)}
-                          </div>
-                        </td>
+        <div className="space-y-4">
+          <SearchFilterBar
+            filters={[
+              {
+                id: 'status',
+                label: 'Status',
+                value: statusFilter,
+                onChange: setStatusFilter,
+                options: [
+                  { value: 'all', label: 'All Statuses' },
+                  { value: 'Pending', label: 'Pending' },
+                  { value: 'Partially Paid', label: 'Partially Paid' },
+                  { value: 'Paid', label: 'Paid' },
+                  { value: 'Overdue', label: 'Overdue' },
+                ],
+              },
+            ]}
+            onReset={() => setStatusFilter('all')}
+          />
 
-                        <td className="py-4 px-6">
-                          <div className="font-bold text-slate-800">
-                            {bill.tenant?.fullName || 'Resident'}
-                          </div>
-                          <div className="text-[11px] text-slate-400">
-                            {bill.room?.roomNumber} • Meter: {bill.meterNumber}
-                          </div>
-                        </td>
+          <Table
+            headers={[
+              'Bill Ref & Month',
+              'Room & Resident',
+              'Units Consumed',
+              'Unit Rate',
+              'Total Due',
+              'Paid',
+              'Balance',
+              'Status',
+              { label: 'Actions', align: 'right' },
+            ]}
+            loading={loading}
+            empty={bills.length === 0}
+            emptyTitle="No electricity bills found"
+            emptyMessage="Record a monthly meter reading to generate electricity bills."
+            emptyIcon={Zap}
+            emptyAction={
+              <Button size="sm" variant="brand" onClick={() => setIsReadingOpen(true)}>
+                Record Reading
+              </Button>
+            }
+          >
+            {bills.map((bill) => (
+              <tr key={bill._id} className="hover:bg-slate-50/60 transition">
+                <td className="py-4 px-4 sm:px-5 font-mono">
+                  <div className="font-bold text-slate-900">{bill.billNumber}</div>
+                  <div className="text-[11px] text-teal-700 font-sans font-bold">
+                    {formatMonth(bill.billingMonth)}
+                  </div>
+                </td>
 
-                        <td className="py-4 px-6">
-                          <div className="font-bold text-slate-900">
-                            {bill.unitsConsumed} Units
-                          </div>
-                          <div className="text-[11px] text-slate-400 font-mono">
-                            {bill.previousReading} → {bill.currentReading}
-                          </div>
-                        </td>
+                <td className="py-4 px-4 sm:px-5">
+                  <div className="font-bold text-slate-800">
+                    {bill.tenant?.fullName || 'Resident'}
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {bill.room?.roomNumber} • Meter: {bill.meterNumber}
+                  </div>
+                </td>
 
-                        <td className="py-4 px-6 font-medium text-slate-600">
-                          ₹{bill.ratePerUnit}/unit
-                        </td>
+                <td className="py-4 px-4 sm:px-5">
+                  <div className="font-bold text-slate-900 tabular-nums">
+                    {bill.unitsConsumed} Units
+                  </div>
+                  <div className="text-[11px] text-slate-400 font-mono">
+                    {bill.previousReading} → {bill.currentReading}
+                  </div>
+                </td>
 
-                        <td className="py-4 px-6 font-bold text-slate-900">
-                          {formatCurrency(bill.totalDue)}
-                        </td>
+                <td className="py-4 px-4 sm:px-5 font-medium text-slate-600 tabular-nums">
+                  ₹{bill.ratePerUnit}/unit
+                </td>
 
-                        <td className="py-4 px-6 font-bold text-emerald-600">
-                          {formatCurrency(bill.amountPaid)}
-                        </td>
+                <td className="py-4 px-4 sm:px-5 font-bold text-slate-900 tabular-nums">
+                  {formatCurrency(bill.totalDue)}
+                </td>
 
-                        <td className="py-4 px-6 font-black text-rose-600">
-                          {formatCurrency(bill.remainingBalance)}
-                        </td>
+                <td className="py-4 px-4 sm:px-5 font-bold text-emerald-700 tabular-nums">
+                  {formatCurrency(bill.amountPaid)}
+                </td>
 
-                        <td className="py-4 px-6">
-                          <Badge status={bill.status} />
-                        </td>
+                <td className="py-4 px-4 sm:px-5 font-black text-rose-600 tabular-nums">
+                  {formatCurrency(bill.remainingBalance)}
+                </td>
 
-                        <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {bill.status !== 'Paid' && (
-                              <Button
-                                size="xs"
-                                variant="primary"
-                                onClick={() => {
-                                  setSelectedBill(bill);
-                                  setPaymentForm({
-                                    amountPaid: bill.remainingBalance,
-                                    paymentDate: new Date().toISOString().slice(0, 10),
-                                    paymentMethod: 'UPI',
-                                    transactionReference: '',
-                                    notes: '',
-                                  });
-                                  setIsPaymentOpen(true);
-                                }}
-                              >
-                                Collect
-                              </Button>
-                            )}
-                            <a
-                              href={`/api/electricity/bills/${bill._id}/pdf`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition"
-                              title="Download Electricity Bill PDF"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                            </a>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+                <td className="py-4 px-4 sm:px-5">
+                  <Badge status={bill.status} />
+                </td>
 
-      {/* TAB 2: Historical Readings */}
-      {activeTab === 'readings' && (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
-                <tr>
-                  <th className="py-4 px-6">Month & Date</th>
-                  <th className="py-4 px-6">Room No</th>
-                  <th className="py-4 px-6">Meter Number</th>
-                  <th className="py-4 px-6">Previous</th>
-                  <th className="py-4 px-6">Current</th>
-                  <th className="py-4 px-6">Units Consumed</th>
-                  <th className="py-4 px-6">Calculated Charge</th>
-                  <th className="py-4 px-6 text-right">Photo / Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {readings.map((r) => (
-                  <tr key={r._id} className="hover:bg-slate-50/50 transition">
-                    <td className="py-4 px-6">
-                      <div className="font-bold text-slate-900">{r.billingMonth}</div>
-                      <div className="text-[11px] text-slate-400">
-                        {formatDate(r.readingDate)}
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 font-bold text-slate-800">
-                      {r.room?.roomNumber}
-                    </td>
-                    <td className="py-4 px-6 font-mono text-amber-700 font-bold">
-                      {r.meterNumber}
-                    </td>
-                    <td className="py-4 px-6 font-mono text-slate-500">
-                      {r.previousReading}
-                    </td>
-                    <td className="py-4 px-6 font-mono font-bold text-slate-900">
-                      {r.currentReading}
-                    </td>
-                    <td className="py-4 px-6 font-black text-indigo-600 text-sm">
-                      {r.unitsConsumed} units
-                    </td>
-                    <td className="py-4 px-6 font-bold text-slate-900">
-                      {formatCurrency(r.calculatedAmount)}
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      {r.photoUrl ? (
-                        <a
-                          href={r.photoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-indigo-600 font-bold hover:underline"
-                        >
-                          <Camera className="w-3.5 h-3.5" />
-                          View Photo
-                        </a>
-                      ) : (
-                        <span className="text-slate-400 italic">None</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                <td className="py-4 px-4 sm:px-5 text-right">
+                  <div className="flex items-center justify-end gap-1.5">
+                    {bill.status !== 'Paid' && (
+                      <Button
+                        size="xs"
+                        variant="brand"
+                        onClick={() => {
+                          setSelectedBill(bill);
+                          setPaymentForm({
+                            amountPaid: bill.remainingBalance,
+                            paymentDate: new Date().toISOString().slice(0, 10),
+                            paymentMethod: 'UPI',
+                            transactionReference: '',
+                            notes: '',
+                          });
+                          setIsPaymentOpen(true);
+                        }}
+                      >
+                        Collect
+                      </Button>
+                    )}
+                    <a
+                      href={`/api/electricity/bills/${bill._id}/pdf`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition"
+                      title="Download Electricity Bill PDF"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </Table>
         </div>
       )}
 
-      {/* TAB 3: Meters List */}
+      {/* TAB 2: Meter Readings History */}
+      {activeTab === 'readings' && (
+        <Table
+          headers={[
+            'Reading Date',
+            'Room & Meter',
+            'Billing Month',
+            'Previous Reading',
+            'Current Reading',
+            'Net Consumption',
+            'Photo / Evidence',
+          ]}
+          loading={loading}
+          empty={readings.length === 0}
+          emptyTitle="No meter readings recorded"
+          emptyMessage="Recorded monthly meter readings will be listed here."
+          emptyIcon={History}
+        >
+          {readings.map((r) => (
+            <tr key={r._id} className="hover:bg-slate-50/60 transition">
+              <td className="py-4 px-4 sm:px-5 text-slate-700 font-medium">
+                {formatDate(r.readingDate)}
+              </td>
+              <td className="py-4 px-4 sm:px-5">
+                <div className="font-bold text-slate-900">{r.room?.roomNumber}</div>
+                <div className="text-[11px] text-slate-400 font-mono">{r.meterNumber}</div>
+              </td>
+              <td className="py-4 px-4 sm:px-5 font-semibold text-slate-700">
+                {formatMonth(r.billingMonth)}
+              </td>
+              <td className="py-4 px-4 sm:px-5 font-mono text-slate-600 tabular-nums">
+                {r.previousReading}
+              </td>
+              <td className="py-4 px-4 sm:px-5 font-mono font-bold text-slate-900 tabular-nums">
+                {r.currentReading}
+              </td>
+              <td className="py-4 px-4 sm:px-5 font-black text-teal-700 tabular-nums">
+                {r.unitsConsumed} Units
+              </td>
+              <td className="py-4 px-4 sm:px-5">
+                {r.readingPhoto ? (
+                  <a
+                    href={`/${r.readingPhoto}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-800 font-bold"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>View Meter Photo</span>
+                  </a>
+                ) : (
+                  <span className="text-slate-400 text-xs italic">No photo attached</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </Table>
+      )}
+
+      {/* TAB 3: Sub-Meters */}
       {activeTab === 'meters' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {meters.map((meter) => (
             <div
               key={meter._id}
-              className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between"
+              className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-soft-sm hover:shadow-soft transition space-y-3"
             >
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
-                    {meter.meterNumber}
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Assigned Sub-Meter
                   </span>
-                  <Badge variant="emerald">Active</Badge>
+                  <h4 className="text-base font-black text-slate-900 font-mono mt-0.5">
+                    {meter.meterNumber}
+                  </h4>
                 </div>
-                <h4 className="text-base font-black text-slate-900 mt-3">
-                  Room: {meter.room?.roomNumber}
-                </h4>
-                <div className="text-xs text-slate-500 mt-1">
-                  Type: Sub-meter • Rate: ₹{meter.ratePerUnit}/unit
-                </div>
-
-                <div className="mt-4 p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Current Reading:</span>
-                    <span className="font-mono font-bold text-slate-900 text-sm">
-                      {meter.currentReading} units
-                    </span>
-                  </div>
+                <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
+                  <Gauge className="w-4 h-4" />
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
-                Installed: {formatDate(meter.installationDate)}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Room:</span>
+                  <span className="font-bold text-slate-800">{meter.room?.roomNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Last Reading:</span>
+                  <span className="font-mono font-bold text-slate-900 tabular-nums">
+                    {meter.currentReading}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Rate/Unit:</span>
+                  <span className="font-bold text-emerald-700">₹{meter.ratePerUnit}</span>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Record Meter Reading Modal */}
+      {/* Record Reading Modal */}
       <Modal
         isOpen={isReadingOpen}
         onClose={() => setIsReadingOpen(false)}
-        title="Record Monthly Sub-Meter Reading"
-        subtitle="Formula: Units Consumed = (Current Reading - Previous Reading). Charge = Units × Rate."
+        title="Record Monthly Meter Reading"
+        subtitle="Calculates consumption: (Current - Previous) × Rate per unit."
         maxWidth="max-w-lg"
       >
-        <form onSubmit={handleReadingSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleRecordReading} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select
               label="Select Room"
               required
               value={readingForm.roomId}
               onChange={(e) => handleRoomSelect(e.target.value)}
-            >
-              <option value="">-- Choose Room --</option>
-              {rooms.map((r) => (
-                <option key={r._id} value={r._id}>
-                  {r.roomNumber} ({r.floorName}) - {r.status}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { value: '', label: '-- Choose Room --' },
+                ...rooms.map((r) => ({
+                  value: r._id,
+                  label: `${r.roomNumber} (${r.electricityMeterNumber || 'No meter'})`,
+                })),
+              ]}
+            />
 
             <Input
-              label="Meter Number"
-              placeholder="e.g. MTR-101"
+              label="Meter Serial / Number"
               value={readingForm.meterNumber}
-              onChange={(e) =>
-                setReadingForm({ ...readingForm, meterNumber: e.target.value })
-              }
+              disabled
+              placeholder="Auto-filled from room"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Billing Month"
               type="month"
@@ -507,6 +533,7 @@ const ElectricityPage = () => {
                 setReadingForm({ ...readingForm, billingMonth: e.target.value })
               }
             />
+
             <Input
               label="Reading Date"
               type="date"
@@ -518,19 +545,21 @@ const ElectricityPage = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
-              label="Current Meter Reading (Units)"
+              label="Current Meter Reading"
               type="number"
+              step="any"
               required
-              placeholder="e.g. 1395"
+              placeholder="e.g. 1420"
               value={readingForm.currentReading}
               onChange={(e) =>
                 setReadingForm({ ...readingForm, currentReading: e.target.value })
               }
             />
+
             <Input
-              label="Rate Per Unit (INR)"
+              label="Electricity Rate (₹/Unit)"
               type="number"
               step="0.1"
               required
@@ -542,109 +571,92 @@ const ElectricityPage = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-              Upload Meter Photo (Optional)
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Upload Meter Photo (Optional verification)
             </label>
             <input
               type="file"
               accept="image/*"
-              className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100"
               onChange={(e) => setReadingPhoto(e.target.files[0])}
+              className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
             />
           </div>
 
-          <Input
-            label="Notes / Inspection Remarks"
-            placeholder="e.g. Sub-meter display verified, seal intact"
-            value={readingForm.notes}
-            onChange={(e) => setReadingForm({ ...readingForm, notes: e.target.value })}
-          />
-
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-            <Button variant="secondary" onClick={() => setIsReadingOpen(false)}>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button type="button" variant="secondary" onClick={() => setIsReadingOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={submitting}>
-              Calculate & Generate Bill
+            <Button type="submit" variant="brand" loading={submitting}>
+              Generate Bill
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Record Electricity Payment Modal */}
+      {/* Collect Payment Modal */}
       {selectedBill && (
         <Modal
           isOpen={isPaymentOpen}
           onClose={() => setIsPaymentOpen(false)}
-          title={`Collect Electricity Bill - ${selectedBill.room?.roomNumber}`}
-          subtitle={`Bill No: ${selectedBill.billNumber} • Month: ${selectedBill.billingMonth}`}
+          title={`Electricity Payment - ${selectedBill.room?.roomNumber}`}
+          subtitle={`Bill: ${selectedBill.billNumber} • Month: ${selectedBill.billingMonth}`}
           maxWidth="max-w-md"
         >
-          <form onSubmit={handlePaymentSubmit} className="space-y-4">
-            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs">
+          <form onSubmit={handleRecordPayment} className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
               <div>
-                <span className="text-amber-800 block">Bill Due Amount</span>
-                <span className="font-black text-amber-950 text-base">
-                  {formatCurrency(selectedBill.totalDue)}
-                </span>
+                <span className="text-slate-500">Remaining Balance:</span>
+                <div className="text-base font-black text-rose-600 tabular-nums">
+                  {formatCurrency(selectedBill.remainingBalance)}
+                </div>
               </div>
               <div className="text-right">
-                <span className="text-amber-800 block">Pending Balance</span>
-                <span className="font-black text-rose-700 text-base">
-                  {formatCurrency(selectedBill.remainingBalance)}
-                </span>
+                <span className="text-slate-500">Units Consumed:</span>
+                <div className="font-bold text-slate-800 tabular-nums">
+                  {selectedBill.unitsConsumed} Units
+                </div>
               </div>
             </div>
 
             <Input
-              label="Amount Paid (INR)"
+              label="Amount Paid Now (₹)"
               type="number"
               required
-              min="1"
               value={paymentForm.amountPaid}
-              onChange={(e) =>
-                setPaymentForm({ ...paymentForm, amountPaid: e.target.value })
-              }
+              onChange={(e) => setPaymentForm({ ...paymentForm, amountPaid: e.target.value })}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <Input
                 label="Payment Date"
                 type="date"
                 required
                 value={paymentForm.paymentDate}
-                onChange={(e) =>
-                  setPaymentForm({ ...paymentForm, paymentDate: e.target.value })
-                }
+                onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
               />
               <Select
                 label="Payment Method"
                 value={paymentForm.paymentMethod}
-                onChange={(e) =>
-                  setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })
-                }
-                options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
+                onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
+                options={PAYMENT_METHODS}
               />
             </div>
 
             <Input
-              label="Transaction Ref / Note"
-              placeholder="e.g. UPI / Cash received"
+              label="Transaction Reference (Optional)"
+              placeholder="e.g. UPI/1283719"
               value={paymentForm.transactionReference}
               onChange={(e) =>
-                setPaymentForm({
-                  ...paymentForm,
-                  transactionReference: e.target.value,
-                })
+                setPaymentForm({ ...paymentForm, transactionReference: e.target.value })
               }
             />
 
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-              <Button variant="secondary" onClick={() => setIsPaymentOpen(false)}>
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <Button type="button" variant="secondary" onClick={() => setIsPaymentOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" loading={submitting}>
-                Save Electricity Payment
+              <Button type="submit" variant="brand" loading={submitting}>
+                Record Payment
               </Button>
             </div>
           </form>
@@ -655,4 +667,3 @@ const ElectricityPage = () => {
 };
 
 export default ElectricityPage;
-

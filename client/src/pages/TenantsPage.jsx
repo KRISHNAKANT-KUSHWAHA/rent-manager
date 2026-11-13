@@ -10,13 +10,11 @@ import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Badge from '../components/common/Badge';
 import Modal from '../components/common/Modal';
-import ConfirmDialog from '../components/common/ConfirmDialog';
-import EmptyState from '../components/common/EmptyState';
-import Skeleton from '../components/common/Skeleton';
+import Table from '../components/common/Table';
+import SearchFilterBar from '../components/common/SearchFilterBar';
 import {
   Users,
   Plus,
-  Search,
   User,
   Phone,
   Home,
@@ -24,7 +22,6 @@ import {
   DoorOpen,
   ArrowRight,
   ShieldCheck,
-  AlertCircle,
   Eye,
   LogOut,
   Trash2,
@@ -118,35 +115,36 @@ const TenantsPage = () => {
     }
   }, [statusFilter]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    fetchTenants();
-  };
-
   const handleRoomSelect = (roomId) => {
-    setFormData((prev) => {
-      const selected = availableRooms.find((r) => r._id === roomId);
-      return {
-        ...prev,
-        assignedRoomId: roomId,
-        monthlyRent: selected ? selected.monthlyRent : prev.monthlyRent,
-        securityDeposit: selected ? (selected.securityDeposit ?? 0) : 0,
-      };
+    const selected = availableRooms.find((r) => r._id === roomId);
+    setFormData({
+      ...formData,
+      assignedRoomId: roomId,
+      monthlyRent: selected ? selected.monthlyRent : '',
+      securityDeposit: selected ? (selected.securityDeposit ?? 0) : 0,
     });
   };
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+
     try {
-      const res = await createTenant(formData);
-      toast.success(res.message || 'Tenant registered successfully');
+      const payload = {
+        ...formData,
+        monthlyRent: Number(formData.monthlyRent),
+        securityDeposit: Number(formData.securityDeposit) || 0,
+        rentDueDay: Number(formData.rentDueDay) || 5,
+      };
+
+      const res = await createTenant(payload);
+      toast.success(res.message || 'Tenant registered successfully!');
       setIsFormOpen(false);
       setFormData(initialFormState);
       fetchTenants();
       fetchAvailableRooms();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error registering tenant');
+      toast.error(err.response?.data?.message || 'Failed to register tenant');
     } finally {
       setSubmitting(false);
     }
@@ -156,30 +154,36 @@ const TenantsPage = () => {
     e.preventDefault();
     if (!selectedTenant) return;
     setSubmitting(true);
+
     try {
-      const res = await vacateTenant(selectedTenant._id, vacateData);
-      toast.success(res.message || 'Tenant marked as vacated');
+      const res = await vacateTenant(selectedTenant._id, {
+        ...vacateData,
+        refundAmount: Number(vacateData.refundAmount) || 0,
+        deductionAmount: Number(vacateData.deductionAmount) || 0,
+      });
+      toast.success(res.message || 'Tenant vacated successfully');
       setIsVacateOpen(false);
       fetchTenants();
       fetchAvailableRooms();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error processing move-out');
+      toast.error(err.response?.data?.message || 'Failed to process vacating');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-150">
       <PageHeader
         title="Tenant Management"
         subtitle="Maintain tenant profiles, family & emergency contacts, identity documents, and tenancy records."
       >
         <Button
-          variant="primary"
+          variant="brand"
           icon={Plus}
           onClick={() => {
             setFormData(initialFormState);
+            setFormTab('personal');
             setIsFormOpen(true);
           }}
         >
@@ -188,145 +192,144 @@ const TenantsPage = () => {
       </PageHeader>
 
       {/* Filter and Search */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-80">
-          <Input
-            placeholder="Search tenant name, phone, occupation..."
-            icon={Search}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </form>
-
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="w-48">
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All Tenants' },
-                { value: 'Active', label: 'Active Tenancies' },
-                { value: 'Vacated', label: 'Past Vacated Tenants' },
-              ]}
-            />
-          </div>
-        </div>
-      </div>
+      <SearchFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        placeholder="Search tenant name, phone, occupation..."
+        filters={[
+          {
+            id: 'status',
+            label: 'Status',
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [
+              { value: 'all', label: 'All Tenants' },
+              { value: 'Active', label: 'Active Tenancies' },
+              { value: 'Vacated', label: 'Past Vacated Tenants' },
+            ],
+          },
+        ]}
+        onReset={() => {
+          setSearch('');
+          setStatusFilter('all');
+        }}
+      >
+        <Button size="sm" variant="secondary" onClick={fetchTenants}>
+          Search
+        </Button>
+      </SearchFilterBar>
 
       {/* Tenants Table */}
-      {loading ? (
-        <Skeleton className="h-64" count={3} />
-      ) : tenants.length === 0 ? (
-        <EmptyState
-          title="No tenants found"
-          description="Register a new tenant to assign them to an available room."
-          actionLabel="Register Tenant"
-          onAction={() => setIsFormOpen(true)}
-        />
-      ) : (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
-                <tr>
-                  <th className="py-4 px-6">Tenant Name</th>
-                  <th className="py-4 px-6">Assigned Room</th>
-                  <th className="py-4 px-6">Phone Number</th>
-                  <th className="py-4 px-6">Masked Aadhaar / ID</th>
-                  <th className="py-4 px-6">Move-in Date</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {tenants.map((tenant) => (
-                  <tr key={tenant._id} className="hover:bg-slate-50/50 transition">
-                    <td className="py-4 px-6">
-                      <div className="font-bold text-slate-900 text-sm">
-                        {tenant.fullName}
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        Father: {tenant.fatherName} • {tenant.occupation || 'Resident'}
-                      </div>
-                    </td>
+      <Table
+        headers={[
+          'Tenant Name & Profession',
+          'Assigned Room',
+          'Phone Number',
+          'Masked Aadhaar / ID',
+          'Move-in Date',
+          'Status',
+          { label: 'Actions', align: 'right' },
+        ]}
+        loading={loading}
+        empty={tenants.length === 0}
+        emptyTitle="No tenants found"
+        emptyMessage="Register a new tenant to assign them to an available room."
+        emptyIcon={Users}
+        emptyAction={
+          <Button size="sm" variant="brand" onClick={() => setIsFormOpen(true)}>
+            Register Tenant
+          </Button>
+        }
+      >
+        {tenants.map((tenant) => (
+          <tr key={tenant._id} className="hover:bg-slate-50/60 transition">
+            <td className="py-4 px-4 sm:px-5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-100">
+                  {tenant.fullName ? tenant.fullName[0] : 'T'}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-900 text-sm truncate">
+                    {tenant.fullName}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                    Father: {tenant.fatherName} • {tenant.occupation || 'Resident'}
+                  </div>
+                </div>
+              </div>
+            </td>
 
-                    <td className="py-4 px-6">
-                      {tenant.currentRoom ? (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold">
-                          <Home className="w-3.5 h-3.5" />
-                          <span>{tenant.currentRoom.roomNumber}</span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-medium">None (Vacated)</span>
-                      )}
-                    </td>
+            <td className="py-4 px-4 sm:px-5">
+              {tenant.currentRoom ? (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200/80 text-slate-800 font-bold text-xs">
+                  <Home className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{tenant.currentRoom.roomNumber}</span>
+                </div>
+              ) : (
+                <span className="text-slate-400 font-medium text-xs">None (Vacated)</span>
+              )}
+            </td>
 
-                    <td className="py-4 px-6 font-semibold text-slate-700">
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{tenant.primaryMobile}</span>
-                      </div>
-                    </td>
+            <td className="py-4 px-4 sm:px-5 font-semibold text-slate-700">
+              <div className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                <span>{tenant.primaryMobile}</span>
+              </div>
+            </td>
 
-                    <td className="py-4 px-6 font-mono text-slate-600">
-                      {tenant.maskedAadhaar || maskAadhaar(tenant.aadhaarNumber)}
-                    </td>
+            <td className="py-4 px-4 sm:px-5 font-mono text-slate-600 text-xs">
+              {tenant.maskedAadhaar || maskAadhaar(tenant.aadhaarNumber)}
+            </td>
 
-                    <td className="py-4 px-6 text-slate-600">
-                      {formatDate(tenant.moveInDate)}
-                    </td>
+            <td className="py-4 px-4 sm:px-5 text-slate-600 text-xs font-medium">
+              {formatDate(tenant.moveInDate)}
+            </td>
 
-                    <td className="py-4 px-6">
-                      <Badge status={tenant.status} />
-                    </td>
+            <td className="py-4 px-4 sm:px-5">
+              <Badge status={tenant.status} />
+            </td>
 
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          size="xs"
-                          variant="secondary"
-                          icon={Eye}
-                          onClick={() => navigate(`/tenants/${tenant._id}`)}
-                        >
-                          Profile
-                        </Button>
+            <td className="py-4 px-4 sm:px-5 text-right">
+              <div className="flex items-center justify-end gap-1.5">
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  icon={Eye}
+                  onClick={() => navigate(`/tenants/${tenant._id}`)}
+                >
+                  Profile
+                </Button>
 
-                        {tenant.status === 'Active' && (
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                            icon={LogOut}
-                            title="Vacate room"
-                            onClick={() => {
-                              setSelectedTenant(tenant);
-                              setVacateData({
-                                vacatingDate: new Date().toISOString().slice(0, 10),
-                                depositRefundStatus: 'Refunded',
-                                refundAmount: tenant.currentRoom?.monthlyRent
-                                  ? tenant.currentRoom.monthlyRent * 2
-                                  : '',
-                                deductionAmount: 0,
-                                deductionReason: '',
-                                notes: '',
-                              });
-                              setIsVacateOpen(true);
-                            }}
-                          >
-                            Vacate
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+                {tenant.status === 'Active' && (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    className="text-amber-700 hover:text-amber-800 hover:bg-amber-50"
+                    icon={LogOut}
+                    title="Vacate room"
+                    onClick={() => {
+                      setSelectedTenant(tenant);
+                      setVacateData({
+                        vacatingDate: new Date().toISOString().slice(0, 10),
+                        depositRefundStatus: 'Refunded',
+                        refundAmount: 0,
+                        deductionAmount: 0,
+                        deductionReason: '',
+                        notes: '',
+                      });
+                      setIsVacateOpen(true);
+                    }}
+                  >
+                    Vacate
+                  </Button>
+                )}
+              </div>
+            </td>
+          </tr>
+        ))}
+      </Table>
 
-      {/* Comprehensive Multi-Tab Register Tenant Modal */}
+      {/* Multi-Tab Register Tenant Modal */}
       <Modal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
@@ -339,9 +342,9 @@ const TenantsPage = () => {
           <button
             type="button"
             onClick={() => setFormTab('personal')}
-            className={`px-3 py-1.5 rounded-xl transition ${
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
               formTab === 'personal'
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-slate-900 text-white shadow-soft-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
@@ -350,9 +353,9 @@ const TenantsPage = () => {
           <button
             type="button"
             onClick={() => setFormTab('family')}
-            className={`px-3 py-1.5 rounded-xl transition ${
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
               formTab === 'family'
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-slate-900 text-white shadow-soft-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
@@ -361,9 +364,9 @@ const TenantsPage = () => {
           <button
             type="button"
             onClick={() => setFormTab('identity')}
-            className={`px-3 py-1.5 rounded-xl transition ${
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
               formTab === 'identity'
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-slate-900 text-white shadow-soft-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
@@ -372,9 +375,9 @@ const TenantsPage = () => {
           <button
             type="button"
             onClick={() => setFormTab('room')}
-            className={`px-3 py-1.5 rounded-xl transition ${
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
               formTab === 'room'
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-slate-900 text-white shadow-soft-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
@@ -467,7 +470,7 @@ const TenantsPage = () => {
           {/* Tab 2: Family & Emergency */}
           {formTab === 'family' && (
             <div className="space-y-4 animate-in fade-in">
-              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed">
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-900 leading-relaxed">
                 Emergency contact details are critical for house safety and urgent notifications.
               </div>
 
@@ -517,7 +520,7 @@ const TenantsPage = () => {
           {/* Tab 3: Identity Details */}
           {formTab === 'identity' && (
             <div className="space-y-4 animate-in fade-in">
-              <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 leading-relaxed">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
                 Identity numbers will be safely stored and masked in the UI. Physical copies can be uploaded in the Documents module.
               </div>
 
@@ -558,8 +561,7 @@ const TenantsPage = () => {
                 <option value="">-- Select an Available Room --</option>
                 {availableRooms.map((r) => (
                   <option key={r._id} value={r._id}>
-                    {r.roomNumber} ({r.floorName || `Floor ${r.floor}`}) - ₹{r.monthlyRent}
-                    /mo
+                    {r.roomNumber} ({r.floorName || `Floor ${r.floor}`}) - ₹{r.monthlyRent}/mo
                   </option>
                 ))}
               </Select>
@@ -575,9 +577,9 @@ const TenantsPage = () => {
                   }
                 />
                 <Input
-                  label="Security Deposit (INR)"
+                  label="Security Deposit (INR) - Defaults to 0"
                   type="number"
-                  placeholder="0 (Default: 0)"
+                  placeholder="0"
                   value={formData.securityDeposit}
                   onChange={(e) =>
                     setFormData({ ...formData, securityDeposit: e.target.value })
@@ -622,7 +624,7 @@ const TenantsPage = () => {
               {formTab !== 'room' ? (
                 <Button
                   type="button"
-                  variant="primary"
+                  variant="dark"
                   onClick={() => {
                     if (formTab === 'personal') setFormTab('family');
                     else if (formTab === 'family') setFormTab('identity');
@@ -632,7 +634,7 @@ const TenantsPage = () => {
                   Next Step
                 </Button>
               ) : (
-                <Button type="submit" variant="primary" loading={submitting}>
+                <Button type="submit" variant="brand" loading={submitting}>
                   Complete Registration
                 </Button>
               )}
@@ -651,7 +653,7 @@ const TenantsPage = () => {
           maxWidth="max-w-lg"
         >
           <form onSubmit={handleVacateSubmit} className="space-y-4">
-            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 leading-relaxed">
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 leading-relaxed">
               <strong>Notice:</strong> Vacating marks the tenancy as terminated and releases the room. All rent invoices, payments, and electricity history will be permanently preserved in the ledger.
             </div>
 
@@ -667,7 +669,7 @@ const TenantsPage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <Select
-                label="Security Deposit Status"
+                label="Security Deposit Settlement"
                 value={vacateData.depositRefundStatus}
                 onChange={(e) =>
                   setVacateData({ ...vacateData, depositRefundStatus: e.target.value })
@@ -676,13 +678,13 @@ const TenantsPage = () => {
                   { value: 'Refunded', label: 'Refunded in Full' },
                   { value: 'Partially Refunded', label: 'Partially Refunded (Deductions)' },
                   { value: 'Forfeited', label: 'Forfeited' },
-                  { value: 'Pending', label: 'Settlement Pending' },
+                  { value: 'Not Applicable', label: 'Not Applicable (₹0 Deposit)' },
                 ]}
               />
               <Input
                 label="Refund Amount (INR)"
                 type="number"
-                placeholder="17000"
+                placeholder="0"
                 value={vacateData.refundAmount}
                 onChange={(e) =>
                   setVacateData({ ...vacateData, refundAmount: e.target.value })
@@ -733,4 +735,3 @@ const TenantsPage = () => {
 };
 
 export default TenantsPage;
-

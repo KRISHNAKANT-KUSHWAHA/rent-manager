@@ -38,12 +38,16 @@ const Input = forwardRef(
             ref={ref}
             type={type}
             required={required}
+            onWheel={(e) => {
+              if (type === 'number') e.target.blur();
+              if (props.onWheel) props.onWheel(e);
+            }}
             className={`w-full rounded-xl border transition-all duration-150 text-sm ${
               Icon ? 'pl-9' : 'pl-3.5'
             } pr-3.5 py-2.5 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
               error
                 ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-200 text-rose-900'
-                : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-100 text-slate-800'
+                : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20 text-slate-800'
             } ${className}`}
             {...props}
           />

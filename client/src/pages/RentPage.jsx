@@ -14,8 +14,9 @@ import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Badge from '../components/common/Badge';
 import Modal from '../components/common/Modal';
-import EmptyState from '../components/common/EmptyState';
-import Skeleton from '../components/common/Skeleton';
+import Table from '../components/common/Table';
+import StatCard from '../components/common/StatCard';
+import SearchFilterBar from '../components/common/SearchFilterBar';
 import {
   Receipt,
   Plus,
@@ -24,7 +25,6 @@ import {
   FileText,
   Clock,
   CheckCircle,
-  AlertTriangle,
   History,
   Printer,
   Sparkles,
@@ -122,7 +122,7 @@ const RentPage = () => {
       fetchInvoices();
       fetchPayments();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error recording payment');
+      toast.error(err.response?.data?.message || 'Failed to record rent payment');
     } finally {
       setSubmitting(false);
     }
@@ -131,7 +131,7 @@ const RentPage = () => {
   const openPaymentModal = (invoice) => {
     setSelectedInvoice(invoice);
     setPaymentForm({
-      amountPaid: invoice.remainingBalance || invoice.rentAmount,
+      amountPaid: invoice.remainingBalance || '',
       paymentDate: new Date().toISOString().slice(0, 10),
       paymentMethod: 'UPI',
       transactionReference: '',
@@ -140,230 +140,264 @@ const RentPage = () => {
     setIsPaymentOpen(true);
   };
 
+  // Quick metrics calculations
+  const totalInvoiced = invoices.reduce((acc, i) => acc + (i.totalDue || 0), 0);
+  const totalCollected = invoices.reduce((acc, i) => acc + (i.amountPaid || 0), 0);
+  const totalRemaining = invoices.reduce((acc, i) => acc + (i.remainingBalance || 0), 0);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-150">
       <PageHeader
         title="Rent Collection & Invoices"
-        subtitle="Generate monthly rent dues, record full or partial payments, and issue official PDF receipts."
+        subtitle="Generate monthly dues, record partial or full payments, and download official PDF rent receipts."
       >
-        <Button
-          variant="secondary"
-          icon={Sparkles}
-          onClick={() => setIsGenerateOpen(true)}
-        >
-          Generate Monthly Invoices
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            icon={Sparkles}
+            onClick={() => setIsGenerateOpen(true)}
+          >
+            Generate Monthly Invoices
+          </Button>
+        </div>
       </PageHeader>
 
-      {/* Tab Switcher & Filter Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs font-bold w-full md:w-auto">
-          <button
-            onClick={() => setActiveTab('invoices')}
-            className={`px-4 py-2 rounded-xl transition ${
-              activeTab === 'invoices'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Monthly Invoices ({invoices.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('payments')}
-            className={`px-4 py-2 rounded-xl transition ${
-              activeTab === 'payments'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Payment Receipts History ({payments.length})
-          </button>
-        </div>
+      {/* Financial Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          title="Total Invoiced"
+          value={formatCurrency(totalInvoiced)}
+          subtitle={`${invoices.length} active invoices`}
+          icon={Receipt}
+          iconBg="bg-slate-100 text-slate-700"
+        />
+        <StatCard
+          title="Rent Collected"
+          value={formatCurrency(totalCollected)}
+          subtitle={
+            totalInvoiced
+              ? `${Math.round((totalCollected / totalInvoiced) * 100)}% Collection Rate`
+              : '0%'
+          }
+          icon={CheckCircle}
+          iconBg="bg-emerald-50 text-emerald-700"
+          trendType="positive"
+        />
+        <StatCard
+          title="Remaining Dues"
+          value={formatCurrency(totalRemaining)}
+          subtitle="Pending collection"
+          icon={Clock}
+          iconBg="bg-amber-50 text-amber-800"
+          trendType={totalRemaining > 0 ? 'negative' : 'positive'}
+        />
+      </div>
 
-        {activeTab === 'invoices' && (
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="w-40">
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                options={[
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2">
+        <button
+          onClick={() => setActiveTab('invoices')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'invoices'
+              ? 'bg-slate-900 text-white shadow-soft-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Receipt className="w-4 h-4" />
+          <span>Rent Invoices ({invoices.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeTab === 'payments'
+              ? 'bg-slate-900 text-white shadow-soft-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          <span>Payment History ({payments.length})</span>
+        </button>
+      </div>
+
+      {/* Invoices Tab View */}
+      {activeTab === 'invoices' && (
+        <div className="space-y-4">
+          <SearchFilterBar
+            placeholder="Search tenant or invoice..."
+            filters={[
+              {
+                id: 'status',
+                label: 'Status',
+                value: statusFilter,
+                onChange: setStatusFilter,
+                options: [
                   { value: 'all', label: 'All Statuses' },
                   { value: 'Pending', label: 'Pending' },
                   { value: 'Partially Paid', label: 'Partially Paid' },
                   { value: 'Paid', label: 'Paid' },
                   { value: 'Overdue', label: 'Overdue' },
-                ]}
-              />
-            </div>
-            <div className="w-40">
-              <Input
+                ],
+              },
+            ]}
+            onReset={() => {
+              setStatusFilter('all');
+              setMonthFilter('');
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <input
                 type="month"
                 value={monthFilter}
                 onChange={(e) => setMonthFilter(e.target.value)}
+                className="text-xs font-semibold py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
-          </div>
-        )}
-      </div>
+          </SearchFilterBar>
 
-      {/* Main Invoices Table */}
-      {activeTab === 'invoices' && (
-        <>
-          {loading ? (
-            <Skeleton className="h-64" count={3} />
-          ) : invoices.length === 0 ? (
-            <EmptyState
-              icon={Receipt}
-              title="No invoices found for this criteria"
-              description="Click 'Generate Monthly Invoices' to create rent dues for all active tenants."
-              actionLabel="Generate Now"
-              onAction={() => setIsGenerateOpen(true)}
-            />
-          ) : (
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
-                    <tr>
-                      <th className="py-4 px-6">Invoice Ref & Month</th>
-                      <th className="py-4 px-6">Tenant & Room</th>
-                      <th className="py-4 px-6">Rent Amount</th>
-                      <th className="py-4 px-6">Previous Dues</th>
-                      <th className="py-4 px-6">Total Due</th>
-                      <th className="py-4 px-6">Amount Paid</th>
-                      <th className="py-4 px-6">Remaining</th>
-                      <th className="py-4 px-6">Status</th>
-                      <th className="py-4 px-6 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {invoices.map((inv) => (
-                      <tr key={inv._id} className="hover:bg-slate-50/50 transition">
-                        <td className="py-4 px-6">
-                          <div className="font-bold text-slate-900">{inv.invoiceNumber}</div>
-                          <div className="text-[11px] text-indigo-600 font-semibold mt-0.5">
-                            Month: {formatMonth(inv.billingMonth)}
-                          </div>
-                        </td>
+          <Table
+            headers={[
+              'Invoice #',
+              'Tenant & Room',
+              'Rent Amount',
+              'Previous Dues',
+              'Total Due',
+              'Amount Paid',
+              'Remaining',
+              'Status',
+              { label: 'Action', align: 'right' },
+            ]}
+            loading={loading}
+            empty={invoices.length === 0}
+            emptyTitle="No rent invoices found"
+            emptyMessage="Generate monthly invoices or change your filter."
+            emptyIcon={Receipt}
+            emptyAction={
+              <Button size="sm" variant="brand" onClick={() => setIsGenerateOpen(true)}>
+                Generate Invoices
+              </Button>
+            }
+          >
+            {invoices.map((inv) => (
+              <tr key={inv._id} className="hover:bg-slate-50/60 transition">
+                <td className="py-4 px-4 sm:px-5">
+                  <div className="font-mono font-bold text-slate-900">{inv.invoiceNumber}</div>
+                  <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                    {formatMonth(inv.billingMonth)}
+                  </div>
+                </td>
 
-                        <td className="py-4 px-6">
-                          <div className="font-bold text-slate-800">
-                            {inv.tenant?.fullName || 'Tenant'}
-                          </div>
-                          <div className="text-[11px] text-slate-400">
-                            {inv.room?.roomNumber} • Due: {formatDate(inv.dueDate)}
-                          </div>
-                        </td>
+                <td className="py-4 px-4 sm:px-5">
+                  <div className="font-bold text-slate-800">
+                    {inv.tenant?.fullName || 'Tenant'}
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {inv.room?.roomNumber} • Due: {formatDate(inv.dueDate)}
+                  </div>
+                </td>
 
-                        <td className="py-4 px-6 font-semibold text-slate-800">
-                          {formatCurrency(inv.rentAmount)}
-                        </td>
+                <td className="py-4 px-4 sm:px-5 font-semibold text-slate-800 tabular-nums">
+                  {formatCurrency(inv.rentAmount)}
+                </td>
 
-                        <td className="py-4 px-6 text-slate-500">
-                          {formatCurrency(inv.previousBalance)}
-                        </td>
+                <td className="py-4 px-4 sm:px-5 text-slate-500 tabular-nums">
+                  {formatCurrency(inv.previousBalance)}
+                </td>
 
-                        <td className="py-4 px-6 font-bold text-slate-900">
-                          {formatCurrency(inv.totalDue)}
-                        </td>
+                <td className="py-4 px-4 sm:px-5 font-bold text-slate-900 tabular-nums">
+                  {formatCurrency(inv.totalDue)}
+                </td>
 
-                        <td className="py-4 px-6 font-bold text-emerald-600">
-                          {formatCurrency(inv.amountPaid)}
-                        </td>
+                <td className="py-4 px-4 sm:px-5 font-bold text-emerald-700 tabular-nums">
+                  {formatCurrency(inv.amountPaid)}
+                </td>
 
-                        <td className="py-4 px-6 font-black text-rose-600">
-                          {formatCurrency(inv.remainingBalance)}
-                        </td>
+                <td className="py-4 px-4 sm:px-5 font-black text-rose-600 tabular-nums">
+                  {formatCurrency(inv.remainingBalance)}
+                </td>
 
-                        <td className="py-4 px-6">
-                          <Badge status={inv.status} />
-                        </td>
+                <td className="py-4 px-4 sm:px-5">
+                  <Badge status={inv.status} />
+                </td>
 
-                        <td className="py-4 px-6 text-right">
-                          {inv.status !== 'Paid' ? (
-                            <Button
-                              size="xs"
-                              variant="primary"
-                              onClick={() => openPaymentModal(inv)}
-                            >
-                              Collect Rent
-                            </Button>
-                          ) : (
-                            <span className="text-emerald-600 font-bold inline-flex items-center gap-1">
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              Paid
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>
+                <td className="py-4 px-4 sm:px-5 text-right">
+                  {inv.status !== 'Paid' ? (
+                    <Button
+                      size="xs"
+                      variant="brand"
+                      onClick={() => openPaymentModal(inv)}
+                    >
+                      Collect Rent
+                    </Button>
+                  ) : (
+                    <span className="text-emerald-700 font-bold inline-flex items-center gap-1 text-xs">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Paid
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </Table>
+        </div>
       )}
 
-      {/* Payments History Table */}
+      {/* Payment History Tab View */}
       {activeTab === 'payments' && (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
-                <tr>
-                  <th className="py-4 px-6">Receipt Number</th>
-                  <th className="py-4 px-6">Payment Date</th>
-                  <th className="py-4 px-6">Tenant Name</th>
-                  <th className="py-4 px-6">Room Number</th>
-                  <th className="py-4 px-6">Amount Paid</th>
-                  <th className="py-4 px-6">Method & Ref</th>
-                  <th className="py-4 px-6 text-right">Receipt PDF</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {payments.map((p) => (
-                  <tr key={p._id} className="hover:bg-slate-50/50 transition">
-                    <td className="py-4 px-6 font-mono font-bold text-slate-900">
-                      {p.receiptNumber}
-                    </td>
-                    <td className="py-4 px-6 text-slate-700">
-                      {formatDate(p.paymentDate)}
-                    </td>
-                    <td className="py-4 px-6 font-bold text-slate-900">
-                      {p.tenant?.fullName}
-                    </td>
-                    <td className="py-4 px-6 text-slate-700">
-                      {p.room?.roomNumber}
-                    </td>
-                    <td className="py-4 px-6 font-black text-emerald-600 text-sm">
-                      +{formatCurrency(p.amountPaid)}
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="font-semibold text-slate-800">{p.paymentMethod}</span>
-                      {p.transactionReference && (
-                        <span className="block text-[11px] text-slate-400 font-mono">
-                          {p.transactionReference}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <a
-                        href={`/api/rent/receipts/${p._id}/pdf`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        <span>Print PDF Receipt</span>
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <Table
+          headers={[
+            'Receipt Number',
+            'Payment Date',
+            'Tenant Name',
+            'Room',
+            'Amount Paid',
+            'Method & Ref',
+            { label: 'Receipt PDF', align: 'right' },
+          ]}
+          loading={loading}
+          empty={payments.length === 0}
+          emptyTitle="No recorded payments"
+          emptyMessage="Collected payments will appear here with official PDF receipts."
+          emptyIcon={CreditCard}
+        >
+          {payments.map((p) => (
+            <tr key={p._id} className="hover:bg-slate-50/60 transition">
+              <td className="py-4 px-4 sm:px-5 font-mono font-bold text-slate-900">
+                {p.receiptNumber}
+              </td>
+              <td className="py-4 px-4 sm:px-5 text-slate-700 font-medium">
+                {formatDate(p.paymentDate)}
+              </td>
+              <td className="py-4 px-4 sm:px-5 font-bold text-slate-900">
+                {p.tenant?.fullName}
+              </td>
+              <td className="py-4 px-4 sm:px-5 text-slate-700">
+                {p.room?.roomNumber}
+              </td>
+              <td className="py-4 px-4 sm:px-5 font-black text-emerald-700 text-sm tabular-nums">
+                +{formatCurrency(p.amountPaid)}
+              </td>
+              <td className="py-4 px-4 sm:px-5">
+                <span className="font-semibold text-slate-800">{p.paymentMethod}</span>
+                {p.transactionReference && (
+                  <span className="block text-[11px] text-slate-400 font-mono">
+                    {p.transactionReference}
+                  </span>
+                )}
+              </td>
+              <td className="py-4 px-4 sm:px-5 text-right">
+                <a
+                  href={`/api/rent/receipts/${p._id}/pdf`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm transition"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print PDF</span>
+                </a>
+              </td>
+            </tr>
+          ))}
+        </Table>
       )}
 
       {/* Record Payment Modal */}
@@ -376,55 +410,49 @@ const RentPage = () => {
           maxWidth="max-w-md"
         >
           <form onSubmit={handleRecordPayment} className="space-y-4">
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
               <div>
-                <span className="text-slate-400 block">Total Invoice Due</span>
-                <span className="font-black text-slate-900 text-base">
-                  {formatCurrency(selectedInvoice.totalDue)}
-                </span>
+                <span className="text-slate-500">Remaining Due Balance:</span>
+                <div className="text-base font-black text-rose-600 tabular-nums">
+                  {formatCurrency(selectedInvoice.remainingBalance)}
+                </div>
               </div>
               <div className="text-right">
-                <span className="text-slate-400 block">Current Balance</span>
-                <span className="font-black text-rose-600 text-base">
-                  {formatCurrency(selectedInvoice.remainingBalance)}
-                </span>
+                <span className="text-slate-500">Monthly Rent:</span>
+                <div className="font-bold text-slate-800 tabular-nums">
+                  {formatCurrency(selectedInvoice.rentAmount)}
+                </div>
               </div>
             </div>
 
             <Input
-              label="Amount Paid (INR)"
+              label="Amount Paid Now (₹)"
               type="number"
               required
-              min="1"
               value={paymentForm.amountPaid}
-              onChange={(e) =>
-                setPaymentForm({ ...paymentForm, amountPaid: e.target.value })
-              }
+              onChange={(e) => setPaymentForm({ ...paymentForm, amountPaid: e.target.value })}
+              placeholder="Enter amount"
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <Input
                 label="Payment Date"
                 type="date"
                 required
                 value={paymentForm.paymentDate}
-                onChange={(e) =>
-                  setPaymentForm({ ...paymentForm, paymentDate: e.target.value })
-                }
+                onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
               />
               <Select
                 label="Payment Method"
                 value={paymentForm.paymentMethod}
-                onChange={(e) =>
-                  setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })
-                }
-                options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
+                onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
+                options={PAYMENT_METHODS}
               />
             </div>
 
             <Input
-              label="Transaction Reference / UPI ID"
-              placeholder="e.g. UPI/HDFC/8821992"
+              label="Transaction / UPI Reference (Optional)"
+              placeholder="e.g. UPI/1239847 or Cheque #9821"
               value={paymentForm.transactionReference}
               onChange={(e) =>
                 setPaymentForm({ ...paymentForm, transactionReference: e.target.value })
@@ -432,30 +460,30 @@ const RentPage = () => {
             />
 
             <Input
-              label="Remarks / Notes"
-              placeholder="e.g. Received via GPay, rent cleared"
+              label="Private Notes / Remarks (Optional)"
+              placeholder="Cash collected in hand / bank transfer"
               value={paymentForm.notes}
               onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
             />
 
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-              <Button variant="secondary" onClick={() => setIsPaymentOpen(false)}>
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <Button type="button" variant="secondary" onClick={() => setIsPaymentOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" loading={submitting}>
-                Save Payment & Issue Receipt
+              <Button type="submit" variant="brand" loading={submitting}>
+                Confirm & Record Payment
               </Button>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* Generate Invoices Modal */}
+      {/* Generate Monthly Invoices Modal */}
       <Modal
         isOpen={isGenerateOpen}
         onClose={() => setIsGenerateOpen(false)}
-        title="Generate Monthly Rent Invoices"
-        subtitle="Generates rent dues for all active room agreements. Existing invoices for the selected month will not be duplicated."
+        title="Generate Monthly Rent Dues"
+        subtitle="Automatically calculates dues for all active room agreements without modifying past invoices."
         maxWidth="max-w-md"
       >
         <form onSubmit={handleGenerateInvoices} className="space-y-4">
@@ -467,16 +495,16 @@ const RentPage = () => {
             onChange={(e) => setGenerateMonth(e.target.value)}
           />
 
-          <p className="text-xs text-slate-500 leading-relaxed">
-            The system will automatically calculate previous outstanding arrears for each tenant, generate unique invoice numbers, and assign due dates according to room contracts.
-          </p>
+          <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-800 leading-relaxed">
+            <span className="font-bold">Safe & Idempotent:</span> If an invoice for a room already exists for this billing month, the system skips it to prevent double-billing.
+          </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-            <Button variant="secondary" onClick={() => setIsGenerateOpen(false)}>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button type="button" variant="secondary" onClick={() => setIsGenerateOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={submitting}>
-              Generate Invoices
+            <Button type="submit" variant="brand" loading={submitting}>
+              Generate Dues
             </Button>
           </div>
         </form>
@@ -486,4 +514,3 @@ const RentPage = () => {
 };
 
 export default RentPage;
-

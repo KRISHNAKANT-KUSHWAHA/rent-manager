@@ -12,6 +12,7 @@ import Badge from '../components/common/Badge';
 import Modal from '../components/common/Modal';
 import EmptyState from '../components/common/EmptyState';
 import Skeleton from '../components/common/Skeleton';
+import SearchFilterBar from '../components/common/SearchFilterBar';
 import {
   FileSignature,
   Plus,
@@ -89,9 +90,8 @@ const AgreementsPage = () => {
 
   const fetchRoomsAndTenants = async () => {
     try {
-      const rRes = await getRooms();
+      const [rRes, tRes] = await Promise.all([getRooms(), getTenants()]);
       if (rRes.success) setRooms(rRes.rooms);
-      const tRes = await getTenants();
       if (tRes.success) setTenants(tRes.tenants);
     } catch (e) {
       // ignore
@@ -107,13 +107,17 @@ const AgreementsPage = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await createAgreement(formData);
-      toast.success(res.message || 'Rental agreement generated');
+      await createAgreement({
+        ...formData,
+        monthlyRent: Number(formData.monthlyRent),
+        securityDeposit: Number(formData.securityDeposit) || 0,
+        rentDueDay: Number(formData.rentDueDay) || 5,
+      });
+      toast.success('Rental agreement generated successfully');
       setIsCreateOpen(false);
       fetchAgreements();
-      fetchRoomsAndTenants();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error creating agreement');
+      toast.error(err.response?.data?.message || 'Failed to create agreement');
     } finally {
       setSubmitting(false);
     }
@@ -124,8 +128,11 @@ const AgreementsPage = () => {
     if (!selectedAgr) return;
     setSubmitting(true);
     try {
-      const res = await renewAgreement(selectedAgr._id, renewData);
-      toast.success(res.message || 'Agreement renewed successfully');
+      await renewAgreement(selectedAgr._id, {
+        ...renewData,
+        newMonthlyRent: Number(renewData.newMonthlyRent),
+      });
+      toast.success('Agreement renewed successfully');
       setIsRenewOpen(false);
       fetchAgreements();
     } catch (err) {
@@ -140,25 +147,29 @@ const AgreementsPage = () => {
     if (!selectedAgr) return;
     setSubmitting(true);
     try {
-      const res = await refundDeposit(selectedAgr._id, refundData);
-      toast.success(res.message || 'Security deposit refund saved');
+      await refundDeposit(selectedAgr._id, {
+        ...refundData,
+        refundAmount: Number(refundData.refundAmount) || 0,
+        deductionAmount: Number(refundData.deductionAmount) || 0,
+      });
+      toast.success('Security deposit settlement recorded');
       setIsRefundOpen(false);
       fetchAgreements();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Refund processing failed');
+      toast.error(err.response?.data?.message || 'Settlement failed');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-150">
       <PageHeader
-        title="Rental Agreement Management"
-        subtitle="Generate legal agreement records, monitor contract expiries, process renewals, and download PDF summaries."
+        title="Rental Agreements"
+        subtitle="Manage tenancy agreements, duration terms, rent due dates, renewal extensions, and security settlements."
       >
         <Button
-          variant="primary"
+          variant="brand"
           icon={Plus}
           onClick={() => {
             setFormData({
@@ -176,38 +187,40 @@ const AgreementsPage = () => {
             setIsCreateOpen(true);
           }}
         >
-          New Rental Agreement
+          Draft New Agreement
         </Button>
       </PageHeader>
 
       {/* Filter Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
-        <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-          Filter by Status:
-        </div>
-        <div className="w-48">
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            options={[
+      <SearchFilterBar
+        filters={[
+          {
+            id: 'status',
+            label: 'Status',
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [
               { value: 'all', label: 'All Agreements' },
-              { value: 'Active', label: 'Active Contracts' },
-              { value: 'Expired', label: 'Expired' },
-              { value: 'Terminated', label: 'Terminated (Vacated)' },
-            ]}
-          />
-        </div>
-      </div>
+              { value: 'Active', label: 'Active Tenancies' },
+              { value: 'ExpiringSoon', label: 'Expiring Within 30 Days' },
+              { value: 'Terminated', label: 'Past / Terminated' },
+            ],
+          },
+        ]}
+        onReset={() => setStatusFilter('all')}
+      />
 
-      {/* Agreements Cards / List */}
+      {/* Agreement Cards Grid */}
       {loading ? (
-        <Skeleton className="h-64" count={3} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Skeleton className="h-64 rounded-2xl" count={4} />
+        </div>
       ) : agreements.length === 0 ? (
         <EmptyState
           icon={FileSignature}
           title="No rental agreements found"
-          description="Create a rental agreement linking a tenant to a room."
-          actionLabel="Create Agreement"
+          description="Draft an agreement to establish a formal room tenancy."
+          actionLabel="Draft Agreement"
           onAction={() => setIsCreateOpen(true)}
         />
       ) : (
@@ -215,19 +228,19 @@ const AgreementsPage = () => {
           {agreements.map((agr) => (
             <div
               key={agr._id}
-              className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              className="bg-white rounded-2xl border border-slate-200/80 shadow-soft-sm hover:shadow-soft transition-all duration-200 p-6 flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className="font-mono text-xs font-bold text-indigo-600 block">
+                    <span className="text-[10px] font-mono font-bold text-slate-400 block uppercase">
                       {agr.agreementNumber}
                     </span>
-                    <h3 className="text-lg font-black text-slate-900 mt-0.5">
-                      {agr.tenant?.fullName || 'Tenant'}
+                    <h3 className="text-lg font-bold text-slate-900 mt-0.5">
+                      {agr.tenant?.fullName || 'Resident'}
                     </h3>
-                    <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
-                      <Home className="w-3.5 h-3.5 text-indigo-500" />
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-0.5">
+                      <Home className="w-3.5 h-3.5 text-slate-400" />
                       <span>
                         {agr.room?.roomNumber} ({agr.room?.floorName || 'Floor'})
                       </span>
@@ -237,7 +250,7 @@ const AgreementsPage = () => {
                 </div>
 
                 {/* Period & Rates Box */}
-                <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 grid grid-cols-2 gap-3 text-xs">
+                <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200/60 grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">
                       Contract Period
@@ -258,7 +271,7 @@ const AgreementsPage = () => {
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">
                       Monthly Rent
                     </span>
-                    <span className="font-black text-slate-900 text-sm">
+                    <span className="font-black text-slate-900 text-sm tabular-nums">
                       {formatCurrency(agr.monthlyRent)}
                     </span>
                   </div>
@@ -266,7 +279,7 @@ const AgreementsPage = () => {
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">
                       Security Deposit
                     </span>
-                    <span className="font-bold text-slate-800 text-sm">
+                    <span className="font-bold text-slate-800 text-sm tabular-nums">
                       {formatCurrency(agr.securityDeposit)}
                     </span>
                   </div>
@@ -275,7 +288,7 @@ const AgreementsPage = () => {
                 {/* Deposit Refund info if terminated */}
                 {agr.securityDepositRefund &&
                   agr.securityDepositRefund.status !== 'Not Applicable' && (
-                    <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
+                    <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-900 flex items-center justify-between">
                       <div>
                         <span className="font-bold block">
                           Deposit Settlement: {agr.securityDepositRefund.status}
@@ -287,7 +300,7 @@ const AgreementsPage = () => {
                       </div>
                       <Button
                         size="xs"
-                        variant="outline"
+                        variant="secondary"
                         onClick={() => {
                           setSelectedAgr(agr);
                           setRefundData({
@@ -314,72 +327,48 @@ const AgreementsPage = () => {
                   href={`/api/agreements/${agr._id}/pdf`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm transition"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>Download Agreement PDF</span>
                 </a>
 
-                <div className="flex items-center gap-2">
-                  {agr.status === 'Active' && (
-                    <Button
-                      size="xs"
-                      variant="secondary"
-                      icon={RefreshCw}
-                      onClick={() => {
-                        setSelectedAgr(agr);
-                        const nextYear = new Date(agr.endDate);
-                        nextYear.setFullYear(nextYear.getFullYear() + 1);
-                        setRenewData({
-                          newEndDate: nextYear.toISOString().slice(0, 10),
-                          newMonthlyRent: agr.monthlyRent,
-                          notes: 'Annual renewal',
-                        });
-                        setIsRenewOpen(true);
-                      }}
-                    >
-                      Renew
-                    </Button>
-                  )}
-                  {agr.status !== 'Active' && (
-                    <Button
-                      size="xs"
-                      variant="ghost"
-                      icon={Coins}
-                      onClick={() => {
-                        setSelectedAgr(agr);
-                        setRefundData({
-                          status: 'Refunded',
-                          refundAmount: agr.securityDeposit,
-                          deductionAmount: 0,
-                          deductionReason: '',
-                          paymentMethod: 'UPI',
-                          transactionRef: '',
-                          notes: '',
-                        });
-                        setIsRefundOpen(true);
-                      }}
-                    >
-                      Deposit Refund
-                    </Button>
-                  )}
-                </div>
+                {agr.status === 'Active' && (
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    icon={RefreshCw}
+                    onClick={() => {
+                      setSelectedAgr(agr);
+                      setRenewData({
+                        newEndDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+                          .toISOString()
+                          .slice(0, 10),
+                        newMonthlyRent: agr.monthlyRent,
+                        notes: '',
+                      });
+                      setIsRenewOpen(true);
+                    }}
+                  >
+                    Renew
+                  </Button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* New Agreement Modal */}
+      {/* Draft Agreement Modal */}
       <Modal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        title="Create New Rental Agreement"
-        subtitle="Formal contract linking a registered tenant with an available room."
+        title="Draft Formal Rental Agreement"
+        subtitle="Links one room to one tenant for a specified tenancy duration."
         maxWidth="max-w-xl"
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <Select
               label="Select Room"
               required
@@ -397,7 +386,7 @@ const AgreementsPage = () => {
               <option value="">-- Choose Room --</option>
               {rooms.map((r) => (
                 <option key={r._id} value={r._id}>
-                  {r.roomNumber} ({r.floorName}) - {r.status}
+                  {r.roomNumber} ({r.floorName || `Floor ${r.floor}`}) - ₹{r.monthlyRent}
                 </option>
               ))}
             </Select>
@@ -411,22 +400,22 @@ const AgreementsPage = () => {
               <option value="">-- Choose Tenant --</option>
               {tenants.map((t) => (
                 <option key={t._id} value={t._id}>
-                  {t.fullName} (Mob: {t.primaryMobile})
+                  {t.fullName} ({t.primaryMobile})
                 </option>
               ))}
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Agreement Start Date"
+              label="Start Date"
               type="date"
               required
               value={formData.startDate}
               onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
             />
             <Input
-              label="Agreement Expiry Date"
+              label="Expiry / End Date"
               type="date"
               required
               value={formData.endDate}
@@ -434,23 +423,23 @@ const AgreementsPage = () => {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <Input
-              label="Monthly Rent (INR)"
+              label="Monthly Rent (₹)"
               type="number"
               required
               value={formData.monthlyRent}
               onChange={(e) => setFormData({ ...formData, monthlyRent: e.target.value })}
             />
             <Input
-              label="Security Deposit (INR)"
+              label="Security Deposit (₹)"
               type="number"
-              placeholder="0 (Default: 0)"
+              placeholder="0"
               value={formData.securityDeposit}
               onChange={(e) => setFormData({ ...formData, securityDeposit: e.target.value })}
             />
             <Input
-              label="Rent Due Day"
+              label="Rent Due Day (1-31)"
               type="number"
               min="1"
               max="31"
@@ -460,17 +449,17 @@ const AgreementsPage = () => {
           </div>
 
           <Input
-            label="Notes / Special Conditions"
-            placeholder="e.g. Sub-meter billing at ₹9.5/unit, 30-day notice"
+            label="Additional Terms & Agreement Notes"
+            placeholder="Electricity billed via submeter monthly, 30-day notice period..."
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           />
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-            <Button variant="secondary" onClick={() => setIsCreateOpen(false)}>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button type="button" variant="secondary" onClick={() => setIsCreateOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={submitting}>
+            <Button type="submit" variant="brand" loading={submitting}>
               Generate Agreement
             </Button>
           </div>
@@ -483,37 +472,38 @@ const AgreementsPage = () => {
           isOpen={isRenewOpen}
           onClose={() => setIsRenewOpen(false)}
           title={`Renew Agreement: ${selectedAgr.agreementNumber}`}
-          subtitle={`Tenant: ${selectedAgr.tenant?.fullName || 'Tenant'} • Current Rent: ₹${selectedAgr.monthlyRent}`}
+          subtitle={`Tenant: ${selectedAgr.tenant?.fullName} • Room: ${selectedAgr.room?.roomNumber}`}
           maxWidth="max-w-md"
         >
           <form onSubmit={handleRenewSubmit} className="space-y-4">
             <Input
-              label="New Expiry Date"
+              label="New Agreement End Date"
               type="date"
               required
               value={renewData.newEndDate}
               onChange={(e) => setRenewData({ ...renewData, newEndDate: e.target.value })}
             />
+
             <Input
-              label="Revised Monthly Rent (INR)"
+              label="New Monthly Rent (INR)"
               type="number"
               required
               value={renewData.newMonthlyRent}
-              onChange={(e) =>
-                setRenewData({ ...renewData, newMonthlyRent: e.target.value })
-              }
+              onChange={(e) => setRenewData({ ...renewData, newMonthlyRent: e.target.value })}
             />
+
             <Input
-              label="Renewal Notes"
-              placeholder="e.g. Extended by 12 months with 5% rent revision"
+              label="Renewal Notes / Remarks"
+              placeholder="Rent revised by 5% as per annual agreement"
               value={renewData.notes}
               onChange={(e) => setRenewData({ ...renewData, notes: e.target.value })}
             />
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-              <Button variant="secondary" onClick={() => setIsRenewOpen(false)}>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <Button type="button" variant="secondary" onClick={() => setIsRenewOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" loading={submitting}>
+              <Button type="submit" variant="brand" loading={submitting}>
                 Save Renewal
               </Button>
             </div>
@@ -521,39 +511,37 @@ const AgreementsPage = () => {
         </Modal>
       )}
 
-      {/* Deposit Refund Modal */}
+      {/* Security Deposit Settlement Modal */}
       {selectedAgr && (
         <Modal
           isOpen={isRefundOpen}
           onClose={() => setIsRefundOpen(false)}
-          title="Security Deposit Settlement"
+          title={`Security Deposit Settlement - ${selectedAgr.tenant?.fullName}`}
           subtitle={`Original Deposit: ₹${selectedAgr.securityDeposit}`}
           maxWidth="max-w-md"
         >
           <form onSubmit={handleRefundSubmit} className="space-y-4">
             <Select
-              label="Refund Status"
+              label="Settlement Status"
               value={refundData.status}
               onChange={(e) => setRefundData({ ...refundData, status: e.target.value })}
               options={[
-                { value: 'Refunded', label: 'Refunded' },
+                { value: 'Refunded', label: 'Refunded in Full' },
                 { value: 'Partially Refunded', label: 'Partially Refunded (Deductions)' },
                 { value: 'Forfeited', label: 'Forfeited' },
-                { value: 'Pending', label: 'Pending Settlement' },
+                { value: 'Pending', label: 'Settlement Pending' },
               ]}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <Input
                 label="Refund Amount (INR)"
                 type="number"
                 value={refundData.refundAmount}
-                onChange={(e) =>
-                  setRefundData({ ...refundData, refundAmount: e.target.value })
-                }
+                onChange={(e) => setRefundData({ ...refundData, refundAmount: e.target.value })}
               />
               <Input
-                label="Deduction Amount (INR)"
+                label="Deduction (INR)"
                 type="number"
                 value={refundData.deductionAmount}
                 onChange={(e) =>
@@ -563,42 +551,36 @@ const AgreementsPage = () => {
             </div>
 
             <Input
-              label="Reason for Deductions (if any)"
-              placeholder="e.g. Repaired bathroom faucet"
+              label="Deduction Reason (if any)"
+              placeholder="e.g. Broken tile, wall paint"
               value={refundData.deductionReason}
-              onChange={(e) =>
-                setRefundData({ ...refundData, deductionReason: e.target.value })
-              }
+              onChange={(e) => setRefundData({ ...refundData, deductionReason: e.target.value })}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <Select
                 label="Payment Method"
                 value={refundData.paymentMethod}
-                onChange={(e) =>
-                  setRefundData({ ...refundData, paymentMethod: e.target.value })
-                }
+                onChange={(e) => setRefundData({ ...refundData, paymentMethod: e.target.value })}
                 options={[
                   { value: 'UPI', label: 'UPI' },
-                  { value: 'Bank Transfer', label: 'Bank Transfer' },
                   { value: 'Cash', label: 'Cash' },
+                  { value: 'Bank Transfer', label: 'Bank Transfer' },
                 ]}
               />
               <Input
-                label="Txn Reference"
-                placeholder="UPI ref / bank utr"
+                label="Transaction Ref"
+                placeholder="UPI/Reference ID"
                 value={refundData.transactionRef}
-                onChange={(e) =>
-                  setRefundData({ ...refundData, transactionRef: e.target.value })
-                }
+                onChange={(e) => setRefundData({ ...refundData, transactionRef: e.target.value })}
               />
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-              <Button variant="secondary" onClick={() => setIsRefundOpen(false)}>
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <Button type="button" variant="secondary" onClick={() => setIsRefundOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" loading={submitting}>
+              <Button type="submit" variant="brand" loading={submitting}>
                 Save Settlement
               </Button>
             </div>
@@ -610,4 +592,3 @@ const AgreementsPage = () => {
 };
 
 export default AgreementsPage;
-

@@ -44,10 +44,10 @@ const LoginPage = () => {
     defaultElectricityRate: 9.5,
     upiId: '',
     initialRooms: [
-      { roomNumber: 'ROOM-101', floor: 0, monthlyRent: '', securityDeposit: 0, electricityMeterNumber: '' },
-      { roomNumber: 'ROOM-102', floor: 0, monthlyRent: '', securityDeposit: 0, electricityMeterNumber: '' },
-      { roomNumber: 'ROOM-201', floor: 1, monthlyRent: '', securityDeposit: 0, electricityMeterNumber: '' },
-      { roomNumber: 'ROOM-202', floor: 1, monthlyRent: '', securityDeposit: 0, electricityMeterNumber: '' },
+      { roomNumber: 'ROOM-101', floor: '0', monthlyRent: '', securityDeposit: '0', electricityMeterNumber: '' },
+      { roomNumber: 'ROOM-102', floor: '0', monthlyRent: '', securityDeposit: '0', electricityMeterNumber: '' },
+      { roomNumber: 'ROOM-201', floor: '1', monthlyRent: '', securityDeposit: '0', electricityMeterNumber: '' },
+      { roomNumber: 'ROOM-202', floor: '1', monthlyRent: '', securityDeposit: '0', electricityMeterNumber: '' },
     ],
   });
 
@@ -86,7 +86,17 @@ const LoginPage = () => {
 
     setLoading(true);
     try {
-      const res = await setup(setupData);
+      const payload = {
+        ...setupData,
+        defaultElectricityRate: Number(setupData.defaultElectricityRate) || 9.5,
+        initialRooms: setupData.initialRooms.map((r) => ({
+          ...r,
+          floor: Number(r.floor) || 0,
+          monthlyRent: Number(r.monthlyRent) || 0,
+          securityDeposit: Number(r.securityDeposit) || 0,
+        })),
+      };
+      const res = await setup(payload);
       if (res.success) {
         toast.success('Owner account and house configured successfully!');
         navigate('/');
@@ -106,9 +116,9 @@ const LoginPage = () => {
         ...prev.initialRooms,
         {
           roomNumber: `ROOM-${nextNum > 2 ? '20' : '10'}${nextNum}`,
-          floor: nextNum > 2 ? 1 : 0,
+          floor: nextNum > 2 ? '1' : '0',
           monthlyRent: '',
-          securityDeposit: 0,
+          securityDeposit: '0',
           electricityMeterNumber: '',
         },
       ],
@@ -135,28 +145,28 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 flex flex-col justify-center items-center p-4 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#0b1324] via-[#064e3b]/80 to-[#0b1324] flex flex-col justify-center items-center p-4 selection:bg-emerald-500 selection:text-white">
       <div className={`w-full ${isSetupRequired ? 'max-w-2xl' : 'max-w-md'} transition-all duration-300`}>
         {/* Branding header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-500/25 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-xl shadow-emerald-500/25 mb-4">
             <Building2 className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
             RoomRent Manager
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-300 mt-1 font-medium">
             Owner-Only Room Rental Management System
           </p>
 
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-indigo-300 text-xs font-semibold">
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 text-emerald-300 text-xs font-semibold">
             <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
             <span>Single Residential House • Private Owner Portal</span>
           </div>
         </div>
 
         {/* Card: First-Time Setup Wizard OR Real Owner Login */}
-        <div className="bg-white rounded-3xl p-7 sm:p-8 shadow-2xl border border-slate-100">
+        <div className="bg-white rounded-3xl p-7 sm:p-8 shadow-2xl border border-slate-200/80">
           {isSetupRequired ? (
             /* First-Time Setup Wizard */
             <div>
@@ -165,7 +175,7 @@ const LoginPage = () => {
                   <h2 className="text-lg font-bold text-slate-900">
                     First-Time House Setup Wizard
                   </h2>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80">
                     Step {setupStep} of 3
                   </span>
                 </div>
@@ -178,17 +188,17 @@ const LoginPage = () => {
               <div className="grid grid-cols-3 gap-2 mb-6">
                 <div
                   className={`h-1.5 rounded-full ${
-                    setupStep >= 1 ? 'bg-indigo-600' : 'bg-slate-200'
+                    setupStep >= 1 ? 'bg-emerald-600' : 'bg-slate-200'
                   }`}
                 />
                 <div
                   className={`h-1.5 rounded-full ${
-                    setupStep >= 2 ? 'bg-indigo-600' : 'bg-slate-200'
+                    setupStep >= 2 ? 'bg-emerald-600' : 'bg-slate-200'
                   }`}
                 />
                 <div
                   className={`h-1.5 rounded-full ${
-                    setupStep >= 3 ? 'bg-indigo-600' : 'bg-slate-200'
+                    setupStep >= 3 ? 'bg-emerald-600' : 'bg-slate-200'
                   }`}
                 />
               </div>
@@ -261,6 +271,7 @@ const LoginPage = () => {
                     <div className="pt-4 flex justify-end">
                       <Button
                         type="button"
+                        variant="brand"
                         onClick={() => {
                           if (!setupData.name || !setupData.email || !setupData.password) {
                             toast.error('Please enter name, email, and password');
@@ -336,6 +347,7 @@ const LoginPage = () => {
                       </Button>
                       <Button
                         type="button"
+                        variant="brand"
                         onClick={() => {
                           if (!setupData.houseName || !setupData.houseAddress) {
                             toast.error('Please enter house name and address');
@@ -360,7 +372,7 @@ const LoginPage = () => {
                       <button
                         type="button"
                         onClick={addRoomRow}
-                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                        className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         Add Room
@@ -393,12 +405,16 @@ const LoginPage = () => {
                               Floor (0,1..)
                             </label>
                             <input
-                              type="number"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-800"
-                              value={room.floor}
-                              onChange={(e) =>
-                                updateRoomRow(idx, 'floor', Number(e.target.value))
-                              }
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              placeholder="0"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                              value={room.floor ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                updateRoomRow(idx, 'floor', val);
+                              }}
                             />
                           </div>
 
@@ -407,17 +423,17 @@ const LoginPage = () => {
                               Rent (₹)
                             </label>
                             <input
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
                               required
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 font-semibold text-slate-800"
-                              value={room.monthlyRent}
-                              onChange={(e) =>
-                                updateRoomRow(
-                                  idx,
-                                  'monthlyRent',
-                                  Number(e.target.value)
-                                )
-                              }
+                              placeholder="e.g. 7500"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                              value={room.monthlyRent ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                updateRoomRow(idx, 'monthlyRent', val);
+                              }}
                             />
                           </div>
 
@@ -426,17 +442,16 @@ const LoginPage = () => {
                               Deposit (₹)
                             </label>
                             <input
-                              type="number"
-                              required
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-800"
-                              value={room.securityDeposit}
-                              onChange={(e) =>
-                                updateRoomRow(
-                                  idx,
-                                  'securityDeposit',
-                                  Number(e.target.value)
-                                )
-                              }
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              placeholder="0"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                              value={room.securityDeposit ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                updateRoomRow(idx, 'securityDeposit', val);
+                              }}
                             />
                           </div>
 
@@ -479,7 +494,7 @@ const LoginPage = () => {
                       </Button>
                       <Button
                         type="submit"
-                        variant="primary"
+                        variant="brand"
                         loading={loading}
                         icon={CheckCircle2}
                       >
@@ -529,7 +544,7 @@ const LoginPage = () => {
 
                 <Button
                   type="submit"
-                  variant="primary"
+                  variant="brand"
                   className="w-full mt-2"
                   loading={loading}
                   icon={ArrowRight}

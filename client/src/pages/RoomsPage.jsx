@@ -11,20 +11,18 @@ import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import EmptyState from '../components/common/EmptyState';
 import Skeleton from '../components/common/Skeleton';
+import SearchFilterBar from '../components/common/SearchFilterBar';
 import {
   Home,
   Plus,
-  Search,
-  Filter,
   Zap,
-  ShieldCheck,
   User,
   History,
   Edit2,
   Trash2,
   Eye,
   CheckCircle2,
-  AlertCircle,
+  Building2,
 } from 'lucide-react';
 
 const RoomsPage = () => {
@@ -42,7 +40,7 @@ const RoomsPage = () => {
   const [roomDetails, setRoomDetails] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form state
+  // Form state (default securityDeposit is 0)
   const initialFormState = {
     roomNumber: '',
     floor: 0,
@@ -82,11 +80,6 @@ const RoomsPage = () => {
     fetchRooms();
   }, [statusFilter, floorFilter]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    fetchRooms();
-  };
-
   const handleOpenAdd = () => {
     setSelectedRoom(null);
     setFormData(initialFormState);
@@ -107,7 +100,7 @@ const RoomsPage = () => {
       status: room.status,
       amenities: Array.isArray(room.amenities)
         ? room.amenities.join(', ')
-        : 'Attached Bathroom, Ceiling Fan',
+        : room.amenities || '',
       notes: room.notes || '',
     });
     setIsFormOpen(true);
@@ -121,46 +114,48 @@ const RoomsPage = () => {
         setIsDetailOpen(true);
       }
     } catch (err) {
-      toast.error('Failed to load room details');
+      toast.error('Could not load room details');
     }
   };
 
-  const handleFormSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
       const payload = {
         ...formData,
+        monthlyRent: Number(formData.monthlyRent),
+        securityDeposit: Number(formData.securityDeposit) || 0,
+        floor: Number(formData.floor),
         amenities: formData.amenities
-          .split(',')
-          .map((a) => a.trim())
-          .filter(Boolean),
+          ? formData.amenities.split(',').map((a) => a.trim()).filter(Boolean)
+          : [],
       };
 
       if (selectedRoom) {
-        const res = await updateRoom(selectedRoom._id, payload);
-        toast.success(res.message || 'Room updated successfully');
+        await updateRoom(selectedRoom._id, payload);
+        toast.success(`Room ${formData.roomNumber} updated successfully`);
       } else {
-        const res = await createRoom(payload);
-        toast.success(res.message || 'Room added to the house');
+        await createRoom(payload);
+        toast.success(`Room ${formData.roomNumber} added successfully`);
       }
 
       setIsFormOpen(false);
       fetchRooms();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error saving room details');
+      toast.error(err.response?.data?.message || 'Failed to save room details');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDeleteRoom = async () => {
+  const handleDelete = async () => {
     if (!selectedRoom) return;
     setSubmitting(true);
     try {
-      const res = await deleteRoom(selectedRoom._id);
-      toast.success(res.message || 'Room deleted');
+      await deleteRoom(selectedRoom._id);
+      toast.success(`Room ${selectedRoom.roomNumber} deleted successfully`);
       setIsDeleteOpen(false);
       fetchRooms();
     } catch (err) {
@@ -171,60 +166,65 @@ const RoomsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-150">
       <PageHeader
         title="Room Management"
         subtitle="Manage rooms, floor assignments, rent rates, and sub-meters for this single house."
       >
-        <Button variant="primary" icon={Plus} onClick={handleOpenAdd}>
+        <Button variant="brand" icon={Plus} onClick={handleOpenAdd}>
           Add New Room
         </Button>
       </PageHeader>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-80">
-          <Input
-            placeholder="Search room no, description..."
-            icon={Search}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </form>
-
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="w-40">
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All Statuses' },
-                { value: 'Available', label: 'Available' },
-                { value: 'Occupied', label: 'Occupied' },
-                { value: 'Maintenance', label: 'Maintenance' },
-              ]}
-            />
-          </div>
-
-          <div className="w-36">
-            <Select
-              value={floorFilter}
-              onChange={(e) => setFloorFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All Floors' },
-                { value: '0', label: 'Ground Floor' },
-                { value: '1', label: '1st Floor' },
-                { value: '2', label: '2nd Floor' },
-              ]}
-            />
-          </div>
-        </div>
-      </div>
+      <SearchFilterBar
+        search={search}
+        onSearchChange={(val) => {
+          setSearch(val);
+        }}
+        placeholder="Search room no, description..."
+        filters={[
+          {
+            id: 'status',
+            label: 'Status',
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [
+              { value: 'all', label: 'All Statuses' },
+              { value: 'Available', label: 'Available' },
+              { value: 'Occupied', label: 'Occupied' },
+              { value: 'Maintenance', label: 'Maintenance' },
+            ],
+          },
+          {
+            id: 'floor',
+            label: 'Floor',
+            value: floorFilter,
+            onChange: setFloorFilter,
+            options: [
+              { value: 'all', label: 'All Floors' },
+              { value: '0', label: 'Ground Floor' },
+              { value: '1', label: '1st Floor' },
+              { value: '2', label: '2nd Floor' },
+              { value: '3', label: '3rd Floor' },
+            ],
+          },
+        ]}
+        onReset={() => {
+          setSearch('');
+          setStatusFilter('all');
+          setFloorFilter('all');
+        }}
+      >
+        <Button size="sm" variant="secondary" onClick={fetchRooms}>
+          Search
+        </Button>
+      </SearchFilterBar>
 
       {/* Room Cards Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-64" count={4} />
+          <Skeleton className="h-64 rounded-2xl" count={4} />
         </div>
       ) : rooms.length === 0 ? (
         <EmptyState
@@ -238,7 +238,7 @@ const RoomsPage = () => {
           {rooms.map((room) => (
             <div
               key={room._id}
-              className="bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 p-6 flex flex-col justify-between"
+              className="bg-white rounded-2xl border border-slate-200/80 shadow-soft-sm hover:shadow-soft hover:border-emerald-300 transition-all duration-200 p-6 flex flex-col justify-between group"
             >
               <div>
                 {/* Header: Room Number & Status */}
@@ -247,7 +247,7 @@ const RoomsPage = () => {
                     <h3 className="text-xl font-black text-slate-900 tracking-tight">
                       {room.roomNumber}
                     </h3>
-                    <div className="text-xs text-slate-400 mt-0.5">
+                    <div className="text-xs text-slate-500 font-medium mt-0.5">
                       {room.floorName || `Floor ${room.floor}`}
                     </div>
                   </div>
@@ -259,49 +259,49 @@ const RoomsPage = () => {
                 </p>
 
                 {/* Financial Rates */}
-                <div className="mt-4 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5">
+                <div className="mt-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 font-medium">Monthly Rent:</span>
-                    <span className="text-sm font-black text-slate-900">
+                    <span className="text-sm font-black text-slate-900 tabular-nums">
                       {formatCurrency(room.monthlyRent)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 font-medium">Security Deposit:</span>
-                    <span className="font-bold text-slate-700">
+                    <span className="font-bold text-slate-700 tabular-nums">
                       {formatCurrency(room.securityDeposit)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                  <div className="flex items-center justify-between text-xs pt-1.5 border-t border-slate-200/60">
                     <span className="text-slate-500 font-medium flex items-center gap-1">
                       <Zap className="w-3.5 h-3.5 text-amber-500" />
                       Meter:
                     </span>
-                    <span className="font-bold text-amber-700 uppercase">
+                    <span className="font-bold text-amber-800 uppercase font-mono">
                       {room.electricityMeterNumber || 'Sub-Meter #1'}
                     </span>
                   </div>
                 </div>
 
-                {/* Current Tenant Banner */}
-                <div className="mt-4 p-3 rounded-2xl border flex items-center gap-3 text-xs">
+                {/* Current Tenant Info */}
+                <div className="mt-4 p-3 rounded-xl border border-slate-200/60 flex items-center gap-3 text-xs">
                   {room.currentTenant ? (
                     <>
-                      <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center shrink-0">
                         <User className="w-4 h-4" />
                       </div>
                       <div className="truncate">
                         <div className="font-bold text-slate-900 truncate">
                           {room.currentTenant.fullName}
                         </div>
-                        <div className="text-[11px] text-slate-400 truncate">
+                        <div className="text-[11px] text-slate-500 truncate">
                           Mob: {room.currentTenant.primaryMobile}
                         </div>
                       </div>
                     </>
                   ) : (
-                    <div className="text-emerald-700 flex items-center gap-1.5 font-medium py-1">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <div className="text-emerald-700 flex items-center gap-1.5 font-medium py-0.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span>Ready for new tenant registration</span>
                     </div>
                   )}
@@ -352,23 +352,21 @@ const RoomsPage = () => {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         title={selectedRoom ? `Edit Room ${selectedRoom.roomNumber}` : 'Add New Room to House'}
-        subtitle="Manage room configuration, floor, rent amount, and sub-meter assignment."
-        maxWidth="max-w-xl"
+        subtitle="Configure room identity, monthly rent, and sub-meter assignment."
       >
-        <form onSubmit={handleFormSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Room Number / Name"
               required
-              placeholder="e.g. ROOM-101"
+              placeholder="e.g. ROOM-101 or 1st Floor Front"
               value={formData.roomNumber}
               onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
             />
             <Select
               label="Floor Level"
-              required
               value={formData.floor}
-              onChange={(e) => setFormData({ ...formData, floor: Number(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
               options={[
                 { value: 0, label: 'Ground Floor' },
                 { value: 1, label: '1st Floor' },
@@ -378,27 +376,27 @@ const RoomsPage = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Monthly Rent (INR)"
+              label="Monthly Rent (₹)"
               type="number"
               required
-              placeholder="8500"
+              placeholder="e.g. 7500"
               value={formData.monthlyRent}
               onChange={(e) => setFormData({ ...formData, monthlyRent: e.target.value })}
             />
             <Input
-              label="Security Deposit (INR)"
+              label="Security Deposit (₹) - Defaults to 0"
               type="number"
-              placeholder="0 (Default: 0)"
+              placeholder="0"
               value={formData.securityDeposit}
               onChange={(e) => setFormData({ ...formData, securityDeposit: e.target.value })}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Electricity Meter No."
+              label="Sub-Meter Serial / No"
               placeholder="e.g. MTR-101"
               value={formData.electricityMeterNumber}
               onChange={(e) =>
@@ -406,141 +404,121 @@ const RoomsPage = () => {
               }
             />
             <Select
-              label="Electricity Billing Type"
-              value={formData.electricityBillingType}
-              onChange={(e) =>
-                setFormData({ ...formData, electricityBillingType: e.target.value })
-              }
+              label="Room Status"
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               options={[
-                { value: 'submeter', label: 'Sub-Meter (Per Unit Consumed)' },
-                { value: 'fixed', label: 'Fixed Monthly Charge' },
-                { value: 'shared', label: 'Shared / Proportionate' },
+                { value: 'Available', label: 'Available (Vacant)' },
+                { value: 'Occupied', label: 'Occupied' },
+                { value: 'Maintenance', label: 'Maintenance' },
               ]}
             />
           </div>
 
-          <Select
-            label="Room Status"
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            options={[
-              { value: 'Available', label: 'Available (Vacant)' },
-              { value: 'Occupied', label: 'Occupied' },
-              { value: 'Maintenance', label: 'Under Maintenance' },
-            ]}
-          />
-
           <Input
             label="Amenities (comma separated)"
-            placeholder="Attached Bathroom, Balcony, Ceiling Fan"
+            placeholder="Attached Bathroom, Balcony, Cupboard, Ceiling Fan"
             value={formData.amenities}
             onChange={(e) => setFormData({ ...formData, amenities: e.target.value })}
           />
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-              Description & Notes
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Description & Highlights
             </label>
             <textarea
               rows={2}
-              className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:border-indigo-500"
-              placeholder="Enter room details, orientation, fittings, etc."
+              className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+              placeholder="West-facing room with direct sunlight, fresh paint..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-            <Button variant="secondary" onClick={() => setIsFormOpen(false)}>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsFormOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={submitting}>
+            <Button type="submit" variant="brand" loading={submitting}>
               {selectedRoom ? 'Update Room' : 'Save Room'}
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Room Details & Historical Tenants Modal */}
+      {/* Room Details Modal */}
       {roomDetails && (
         <Modal
           isOpen={isDetailOpen}
           onClose={() => setIsDetailOpen(false)}
           title={`Room ${roomDetails.room?.roomNumber} Overview`}
-          subtitle={`${roomDetails.room?.floorName || 'Floor'} • ${roomDetails.room?.status}`}
+          subtitle={roomDetails.room?.floorName || `Floor ${roomDetails.room?.floor}`}
           maxWidth="max-w-2xl"
         >
           <div className="space-y-6">
-            {/* Rates and Specs */}
-            <div className="grid grid-cols-3 gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100 text-xs">
-              <div>
-                <span className="text-slate-400 block">Monthly Rent</span>
-                <span className="text-base font-extrabold text-slate-900">
+            {/* Quick Badges */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200/60">
+              <div className="flex items-center gap-3">
+                <Badge status={roomDetails.room?.status} />
+                <span className="text-xs font-semibold text-slate-600">
+                  Meter: {roomDetails.room?.electricityMeterNumber || 'None'}
+                </span>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-slate-500 font-medium">Monthly Rent</div>
+                <div className="text-base font-black text-slate-900 tabular-nums">
                   {formatCurrency(roomDetails.room?.monthlyRent)}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Security Deposit</span>
-                <span className="text-base font-extrabold text-slate-900">
-                  {formatCurrency(roomDetails.room?.securityDeposit)}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Sub-Meter Number</span>
-                <span className="text-base font-extrabold text-amber-700 uppercase">
-                  {roomDetails.room?.electricityMeterNumber || 'MTR-01'}
-                </span>
+                </div>
               </div>
             </div>
 
-            {/* Current Active Tenant */}
+            {/* Current Active Tenancy */}
             <div>
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <User className="w-4 h-4 text-indigo-600" />
-                Current Active Tenant
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                Current Tenancy
               </h4>
-              {roomDetails.room?.currentTenant ? (
-                <div className="p-4 rounded-2xl border border-indigo-100 bg-indigo-50/40 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-bold text-slate-900">
-                      {roomDetails.room.currentTenant.fullName}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      Father: {roomDetails.room.currentTenant.fatherName} • Mobile:{' '}
-                      {roomDetails.room.currentTenant.primaryMobile}
-                    </div>
-                    <div className="text-xs text-indigo-700 font-semibold mt-1">
-                      Moved In: {formatDate(roomDetails.room.currentTenant.moveInDate)}
-                    </div>
+              {roomDetails.currentAgreement ? (
+                <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-slate-900">
+                      {roomDetails.currentTenant?.fullName}
+                    </span>
+                    <Badge status="Active" />
                   </div>
-                  <Badge status="Occupied" />
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <div>Mobile: {roomDetails.currentTenant?.primaryMobile}</div>
+                    <div>Agreement: {roomDetails.currentAgreement?.agreementNumber}</div>
+                    <div>
+                      From: {formatDate(roomDetails.currentAgreement?.startDate)}
+                    </div>
+                    <div>To: {formatDate(roomDetails.currentAgreement?.endDate)}</div>
+                  </div>
                 </div>
               ) : (
-                <div className="p-4 rounded-2xl border border-dashed border-slate-200 text-xs text-slate-500 text-center">
-                  Room is currently vacant and available for rent.
-                </div>
+                <p className="text-xs text-slate-500 italic p-3 bg-slate-50 rounded-xl">
+                  No active tenant currently assigned to this room.
+                </p>
               )}
             </div>
 
-            {/* Historical Tenants for this Room */}
+            {/* Historical Tenancy Records */}
             <div>
               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <History className="w-4 h-4 text-slate-500" />
+                <History className="w-3.5 h-3.5 text-slate-400" />
                 Previous Tenancy History
               </h4>
-              {roomDetails.pastAgreements && roomDetails.pastAgreements.length > 0 ? (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {roomDetails.pastAgreements.map((agr) => (
-                    <div
-                      key={agr._id}
-                      className="p-3 rounded-xl border border-slate-100 bg-white text-xs flex items-center justify-between"
-                    >
+              {roomDetails.agreementHistory && roomDetails.agreementHistory.length > 0 ? (
+                <div className="divide-y divide-slate-100 border border-slate-200/60 rounded-xl overflow-hidden text-xs">
+                  {roomDetails.agreementHistory.map((agr) => (
+                    <div key={agr._id} className="p-3 hover:bg-slate-50 flex items-center justify-between">
                       <div>
-                        <div className="font-bold text-slate-800">
-                          {agr.tenant?.fullName || 'Previous Tenant'}
-                        </div>
+                        <div className="font-bold text-slate-800">{agr.tenant?.fullName}</div>
                         <div className="text-[11px] text-slate-400">
-                          Period: {formatDate(agr.startDate)} to {formatDate(agr.endDate)}
+                          {formatDate(agr.startDate)} to {formatDate(agr.endDate)}
                         </div>
                       </div>
                       <Badge status={agr.status} />
@@ -548,26 +526,32 @@ const RoomsPage = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic">No past rental records for this room.</p>
+                <p className="text-xs text-slate-400 italic">No past rental history for this room.</p>
               )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button variant="secondary" onClick={() => setIsDetailOpen(false)}>
+                Close
+              </Button>
             </div>
           </div>
         </Modal>
       )}
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
-        onConfirm={handleDeleteRoom}
-        title={`Delete Room ${selectedRoom?.roomNumber}?`}
-        message="Are you sure you want to delete this room? This room can only be deleted if it is not currently occupied."
-        confirmText="Delete Room"
+        onConfirm={handleDelete}
         loading={submitting}
+        title={`Delete Room ${selectedRoom?.roomNumber}?`}
+        message="Are you sure you want to delete this room? This room can only be deleted if there is no active tenant assigned."
+        confirmText="Delete Room"
+        variant="danger"
       />
     </div>
   );
 };
 
 export default RoomsPage;
-
